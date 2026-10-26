@@ -226,6 +226,46 @@ and prepare the initial Streamlit dashboard.
 
 
 
+### Step 11: Business KPI SQL Queries and Validation
+
+**Status:** Completed
+
+- Created `app/database/kpi_queries.sql` with eight business KPI queries and three reconciliation checks.
+- Defined total orders across all statuses; delivered-order product sales revenue excluding freight; and AOV based on delivered orders with order items.
+- Calculated monthly revenue by purchase month, order status distribution, top products, top sellers, and delivery performance.
+- Avoided multiplying sales totals through joins to one-to-many payment or review tables.
+
+**Validated KPI Results:**
+
+| Metric | Result |
+|---|---:|
+| Total orders (all statuses) | 99,441 |
+| Delivered orders | 96,478 |
+| Delivered product sales revenue (excluding freight) | 13,221,498.11 |
+| Average order value (AOV) | 137.04 |
+| Monthly revenue periods | 23 |
+| Order status categories | 8 |
+| Evaluated deliveries (complete dates) | 96,470 |
+| Average delivery time | 12.56 days |
+| Late deliveries | 7,826 |
+| Late delivery rate | 8.11% |
+
+**Reconciliation Checks:**
+- Revenue reconciliation difference: `0.00` (passed).
+- Order status total: `99,441`; matches total orders: `true` (passed).
+- Monthly-to-total revenue difference: `0.00` (passed).
+
+**Technical Notes:**
+- Revenue is a product-sales metric, not net accounting revenue or payment receipts; freight, refunds, and payment adjustments are excluded.
+- Delivery performance excludes eight delivered orders without all required date fields.
+- KPI queries were validated on the local Olist PostgreSQL database; dashboard implementation is pending.
+
+**Artifacts:**
+- `app/database/kpi_queries.sql`
+- `docs/kpi_validation_results.md`
+
+**Next:** Implement the Streamlit BI dashboard and cross-check its values against the validated SQL results.
+
 ## Key Technical Decisions
 
 | Decision | Reason |
@@ -241,16 +281,12 @@ and prepare the initial Streamlit dashboard.
 
 ---
 
----
-
 ## Next Steps
 
-1. Develop analytical SQL queries for business KPIs.
-2. Validate revenue, order volume, and average order value calculations.
-3. Implement the initial Streamlit dashboard.
-4. Validate dashboard metrics against PostgreSQL.
-5. Complete Module 1 and create the
-   `v0.1.0-data-dashboard` release tag.
+1. Implement the Streamlit business intelligence dashboard.
+2. Display core KPI cards, monthly revenue trends, order status distribution, top products, top sellers, and delivery performance.
+3. Validate dashboard figures against `docs/kpi_validation_results.md`.
+4. Complete Module 1 and create the `v0.1.0-data-dashboard` release tag.
 
 
 ## Development Principles
