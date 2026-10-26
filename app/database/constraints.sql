@@ -25,3 +25,15 @@ ALTER TABLE order_items
 ADD CONSTRAINT fk_order_items_seller
 FOREIGN KEY (seller_id)
 REFERENCES sellers(seller_id);
+
+-- Order Payments -> Orders
+ALTER TABLE order_payments
+ADD CONSTRAINT fk_order_payments_order
+FOREIGN KEY (order_id)
+REFERENCES orders(order_id);
+
+-- Order Reviews -> Orders
+ALTER TABLE order_reviews
+ADD CONSTRAINT fk_order_reviews_order
+FOREIGN KEY (order_id)
+REFERENCES orders(order_id);
