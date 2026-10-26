@@ -128,21 +128,6 @@ Referential integrity was checked before adding the constraints. All six relatio
 
 **Technical decision:** The `geolocation` table was excluded from direct foreign key relationships because ZIP code prefixes are not unique identifiers.
 
-## Key Technical Decisions
-
-| Decision | Reason |
-|---|---|
-| PostgreSQL | Relational analytics and future pgvector integration |
-| SQLAlchemy | Python database connectivity |
-| Chunked CSV ingestion | More manageable processing of large files |
-| Explicit datetime conversion | Ensure correct PostgreSQL timestamp typing |
-| ZIP prefixes as strings | Preserve leading zeros |
-| Data validation before foreign keys | Detect inconsistent relationships before enforcing constraints |
-| Raw data excluded from Git | Avoid unnecessary large files in the repository |
-| Separate Git commits for features and tests | Maintain traceable development history |
-
----
-
 ### Step 8: Database Index Inspection and Baseline Analysis
 
 **Status:** Completed
@@ -199,19 +184,74 @@ Referential integrity was checked before adding the constraints. All six relatio
 **Next:** Evaluate additional indexes for business analytics queries.
 
 
+### Step 10: Analytical Database Indexing
+
+**Status:** Completed
+
+Evaluated and implemented four additional B-tree indexes
+to optimize analytical queries in PostgreSQL.
+
+**Indexes Created:**
+- `idx_orders_purchase_timestamp` on `orders.order_purchase_timestamp`
+- `idx_order_items_product_id` on `order_items.product_id`
+- `idx_order_items_seller_id` on `order_items.seller_id`
+- `idx_order_reviews_order_id` on `order_reviews.order_id`
+
+**Benchmark Results:**
+
+| Query | Before | After | Observed Speedup |
+|---|---|---|---|
+| Date filtering | 10.053 ms | 3.886 ms | 2.59x |
+| Product lookup | 10.960 ms | 0.631 ms | 17.37x |
+| Seller lookup | 11.707 ms | 1.566 ms | 7.48x |
+| Review lookup | 8.533 ms | 0.153 ms | 55.77x |
+
+**Technical Findings:**
+- PostgreSQL selected Bitmap Heap Scans for date, product,
+  and seller queries.
+- PostgreSQL selected an Index Scan for the review lookup.
+- B-tree indexes improved execution time in all four
+  individual benchmark comparisons.
+- Index benefits depend on query selectivity and data access patterns.
+- Repeated measurements and index maintenance cost analysis
+  remain outside the scope of these initial experiments.
+
+**Artifacts:**
+- `app/database/indexes.sql`
+- `app/database/index_benchmarks.sql`
+- `docs/index_performance.md`
+
+**Next:** Develop analytical SQL queries for business KPIs
+and prepare the initial Streamlit dashboard.
+
+
+
+## Key Technical Decisions
+
+| Decision | Reason |
+|---|---|
+| PostgreSQL | Relational analytics and future pgvector integration |
+| SQLAlchemy | Python database connectivity |
+| Chunked CSV ingestion | More manageable processing of large files |
+| Explicit datetime conversion | Ensure correct PostgreSQL timestamp typing |
+| ZIP prefixes as strings | Preserve leading zeros |
+| Data validation before foreign keys | Detect inconsistent relationships before enforcing constraints |
+| Raw data excluded from Git | Avoid unnecessary large files in the repository |
+| Separate Git commits for features and tests | Maintain traceable development history |
+
+---
+
+---
 
 ## Next Steps
 
-1. Evaluate and implement additional indexes for analytical queries.
-2. Develop SQL queries for business KPIs, including revenue,
-   order volume, average order value, and delivery performance.
-3. Build the initial Streamlit dashboard.
-4. Validate dashboard metrics against PostgreSQL query results.
+1. Develop analytical SQL queries for business KPIs.
+2. Validate revenue, order volume, and average order value calculations.
+3. Implement the initial Streamlit dashboard.
+4. Validate dashboard metrics against PostgreSQL.
 5. Complete Module 1 and create the
    `v0.1.0-data-dashboard` release tag.
 
-
----
 
 ## Development Principles
 
