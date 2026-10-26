@@ -113,20 +113,20 @@ Created SQL validation queries covering:
 
 ### Step 7: Foreign Key Constraints
 
-**Status:** Partially completed
+**Status:** Completed
 
-Created `app/database/constraints.sql`.
+Created `app/database/constraints.sql` and successfully established six foreign key relationships.
 
-Successfully added and verified four foreign key relationships:
+- `orders.customer_id` → `customers.customer_id`
+- `order_items.order_id` → `orders.order_id`
+- `order_items.product_id` → `products.product_id`
+- `order_items.seller_id` → `sellers.seller_id`
+- `order_payments.order_id` → `orders.order_id`
+- `order_reviews.order_id` → `orders.order_id`
 
-1. `orders.customer_id` → `customers.customer_id`
-2. `order_items.order_id` → `orders.order_id`
-3. `order_items.product_id` → `products.product_id`
-4. `order_items.seller_id` → `sellers.seller_id`
+Referential integrity was checked before adding the constraints. All six relationships were verified in PostgreSQL.
 
-**Remaining work:** Validate and define the appropriate relationships for `order_payments` and `order_reviews`, and implement database indexes.
-
----
+**Technical decision:** The `geolocation` table was excluded from direct foreign key relationships because ZIP code prefixes are not unique identifiers.
 
 ## Key Technical Decisions
 
@@ -143,13 +143,73 @@ Successfully added and verified four foreign key relationships:
 
 ---
 
+### Step 8: Database Index Inspection and Baseline Analysis
+
+**Status:** Completed
+
+- Inspected existing PostgreSQL indexes using `pg_indexes`.
+- Identified seven automatically created primary key indexes.
+- Confirmed that foreign key constraints do not automatically create indexes on referencing columns.
+- Identified candidate indexes for analytical queries.
+- Used `EXPLAIN (ANALYZE, BUFFERS)` to examine query execution plans.
+- Established a baseline for customer-based order lookup.
+
+**Baseline Results:**
+- Table: `orders`
+- Filter column: `customer_id`
+- Scan type: Sequential Scan
+- Execution time: 9.301 ms
+- Rows removed by filter: 99,440
+- Shared buffer hits: 1,809
+
+**Technical finding:** PostgreSQL scanned the orders table to locate a single matching customer record because no index existed on `orders.customer_id`.
+
+**Next:** Create and benchmark a B-tree index on `orders.customer_id`.
+
+
+### Step 9: Customer Lookup Index and Performance Benchmark
+
+**Status:** Completed
+
+- Created `app/database/indexes.sql`.
+- Added a B-tree index named `idx_orders_customer_id` on `orders.customer_id`.
+- Verified index creation using `pg_indexes`.
+- Repeated the same customer lookup query.
+- Confirmed that PostgreSQL selected an Index Scan.
+
+**Performance Results:**
+
+| Metric | Before Index | After Index |
+|---|---|---|
+| Scan Type | Sequential Scan | Index Scan |
+| Execution Time | 9.301 ms | 0.067 ms |
+| Shared Buffer Hits | 1,809 | 4 |
+| Rows Returned | 1 | 1 |
+
+**Observed speedup:** Approximately 138.8x in this individual measurement.
+
+**Technical finding:** The B-tree index substantially reduced the amount of data accessed for this selective customer lookup.
+
+**Limitation:** The benchmark consists of individual executions. Repeated measurements would be needed for a more reliable performance assessment.
+
+**Artifacts:**
+- `app/database/indexes.sql`
+- `docs/index_performance.md`
+
+**Next:** Evaluate additional indexes for business analytics queries.
+
+
+
 ## Next Steps
 
-1. Complete remaining foreign key checks and constraints.
-2. Add indexes for frequently queried columns.
-3. Implement analytical SQL queries for business KPIs.
-4. Build the initial Streamlit dashboard.
-5. Complete Module 1 and create the `v0.1.0-data-dashboard` release tag.
+1. Evaluate and implement additional indexes for analytical queries.
+2. Develop SQL queries for business KPIs, including revenue,
+   order volume, average order value, and delivery performance.
+3. Build the initial Streamlit dashboard.
+4. Validate dashboard metrics against PostgreSQL query results.
+5. Complete Module 1 and create the
+   `v0.1.0-data-dashboard` release tag.
+
 
 ---
 
