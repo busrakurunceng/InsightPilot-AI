@@ -1,0 +1,128 @@
+[
+  {
+    "id": "table:customers",
+    "kind": "table",
+    "source": "schema+semantics",
+    "table": "customers",
+    "text": "Table: customers\nDescription: Müşteri kayıtları ve müşterinin coğrafi bilgileri.\nRow grain: Her satır bir müşteri kaydıdır (customer_id).\nColumns:\n- customers.customer_id (VARCHAR(32); nullable=False)\n- customers.customer_unique_id (VARCHAR(32); nullable=True)\n- customers.customer_zip_code_prefix (VARCHAR(5); nullable=True)\n- customers.customer_city (TEXT; nullable=True)\n- customers.customer_state (VARCHAR(2); nullable=True)\nPrimary key: customer_id"
+  },
+  {
+    "id": "table:geolocation",
+    "kind": "table",
+    "source": "schema+semantics",
+    "table": "geolocation",
+    "text": "Table: geolocation\nDescription: Posta kodu önekleriyle ilişkili coğrafi koordinat kayıtları.\nRow grain: Posta kodu öneki benzersiz değildir; bir önekte birden çok satır bulunabilir.\nColumns:\n- geolocation.geolocation_zip_code_prefix (VARCHAR(5); nullable=True)\n- geolocation.geolocation_lat (DOUBLE PRECISION; nullable=True)\n- geolocation.geolocation_lng (DOUBLE PRECISION; nullable=True)\n- geolocation.geolocation_city (TEXT; nullable=True)\n- geolocation.geolocation_state (VARCHAR(2); nullable=True)\nPrimary key: none declared"
+  },
+  {
+    "id": "table:order_items",
+    "kind": "table",
+    "source": "schema+semantics",
+    "table": "order_items",
+    "text": "Table: order_items\nDescription: Sipariş içindeki ürün kalemleri, satıcı ve ürün fiyatları.\nRow grain: Her satır bir sipariş kalemidir (order_id ve order_item_id).\nColumns:\n- order_items.order_id (VARCHAR(32); nullable=False)\n- order_items.order_item_id (INTEGER; nullable=False)\n- order_items.product_id (VARCHAR(32); nullable=True)\n- order_items.seller_id (VARCHAR(32); nullable=True)\n- order_items.shipping_limit_date (TIMESTAMP; nullable=True)\n- order_items.price (NUMERIC(12, 2); nullable=True)\n- order_items.freight_value (NUMERIC(12, 2); nullable=True)\nPrimary key: order_id, order_item_id\nPhysical foreign keys:\n- order_items.order_id -> orders.order_id\n- order_items.product_id -> products.product_id\n- order_items.seller_id -> sellers.seller_id"
+  },
+  {
+    "id": "table:order_payments",
+    "kind": "table",
+    "source": "schema+semantics",
+    "table": "order_payments",
+    "text": "Table: order_payments\nDescription: Siparişler için ödeme kayıtları; bir sipariş birden fazla ödeme kaydına sahip olabilir.\nRow grain: Her satır bir ödeme kaydıdır.\nColumns:\n- order_payments.order_id (VARCHAR(32); nullable=False)\n- order_payments.payment_sequential (INTEGER; nullable=False)\n- order_payments.payment_type (VARCHAR(30); nullable=True)\n- order_payments.payment_installments (INTEGER; nullable=True)\n- order_payments.payment_value (NUMERIC(12, 2); nullable=True)\nPrimary key: order_id, payment_sequential\nPhysical foreign keys:\n- order_payments.order_id -> orders.order_id"
+  },
+  {
+    "id": "table:order_reviews",
+    "kind": "table",
+    "source": "schema+semantics",
+    "table": "order_reviews",
+    "text": "Table: order_reviews\nDescription: Siparişlere ilişkin müşteri değerlendirmeleri.\nRow grain: Her satır bir değerlendirme kaydıdır.\nColumns:\n- order_reviews.review_id (VARCHAR(32); nullable=True)\n- order_reviews.order_id (VARCHAR(32); nullable=True)\n- order_reviews.review_score (INTEGER; nullable=True)\n- order_reviews.review_comment_title (TEXT; nullable=True)\n- order_reviews.review_comment_message (TEXT; nullable=True)\n- order_reviews.review_creation_date (TIMESTAMP; nullable=True)\n- order_reviews.review_answer_timestamp (TIMESTAMP; nullable=True)\nPrimary key: none declared\nPhysical foreign keys:\n- order_reviews.order_id -> orders.order_id"
+  },
+  {
+    "id": "table:orders",
+    "kind": "table",
+    "source": "schema+semantics",
+    "table": "orders",
+    "text": "Table: orders\nDescription: Siparişlerin durumları ve sipariş, teslimat tarihleri.\nRow grain: Her satır bir sipariştir (order_id).\nColumns:\n- orders.order_id (VARCHAR(32); nullable=False)\n- orders.customer_id (VARCHAR(32); nullable=True)\n- orders.order_status (VARCHAR(30); nullable=True)\n- orders.order_purchase_timestamp (TIMESTAMP; nullable=True)\n- orders.order_approved_at (TIMESTAMP; nullable=True)\n- orders.order_delivered_carrier_date (TIMESTAMP; nullable=True)\n- orders.order_delivered_customer_date (TIMESTAMP; nullable=True)\n- orders.order_estimated_delivery_date (TIMESTAMP; nullable=True)\nPrimary key: order_id\nPhysical foreign keys:\n- orders.customer_id -> customers.customer_id"
+  },
+  {
+    "id": "table:product_category_name_translation",
+    "kind": "table",
+    "source": "schema+semantics",
+    "table": "product_category_name_translation",
+    "text": "Table: product_category_name_translation\nDescription: Portekizce ürün kategorilerinin İngilizce karşılıkları.\nRow grain: Her satır bir kategori çevirisidir.\nColumns:\n- product_category_name_translation.product_category_name (TEXT; nullable=False)\n- product_category_name_translation.product_category_name_english (TEXT; nullable=True)\nPrimary key: product_category_name\nLogical relationships (not enforced as FK):\n- products.product_category_name = product_category_name_translation.product_category_name: Ürün kategorisinin İngilizce adını bulmak için kullanılabilir; fiziksel FK yoktur."
+  },
+  {
+    "id": "table:products",
+    "kind": "table",
+    "source": "schema+semantics",
+    "table": "products",
+    "text": "Table: products\nDescription: Ürünlerin kategorileri ve özellikleri.\nRow grain: Her satır bir üründür (product_id).\nColumns:\n- products.product_id (VARCHAR(32); nullable=False)\n- products.product_category_name (TEXT; nullable=True)\n- products.product_name_lenght (INTEGER; nullable=True)\n- products.product_description_lenght (INTEGER; nullable=True)\n- products.product_photos_qty (INTEGER; nullable=True)\n- products.product_weight_g (INTEGER; nullable=True)\n- products.product_length_cm (INTEGER; nullable=True)\n- products.product_height_cm (INTEGER; nullable=True)\n- products.product_width_cm (INTEGER; nullable=True)\nPrimary key: product_id\nLogical relationships (not enforced as FK):\n- products.product_category_name = product_category_name_translation.product_category_name: Ürün kategorisinin İngilizce adını bulmak için kullanılabilir; fiziksel FK yoktur."
+  },
+  {
+    "id": "table:sellers",
+    "kind": "table",
+    "source": "schema+semantics",
+    "table": "sellers",
+    "text": "Table: sellers\nDescription: Satıcı kayıtları ve coğrafi bilgileri.\nRow grain: Her satır bir satıcıdır (seller_id).\nColumns:\n- sellers.seller_id (VARCHAR(32); nullable=False)\n- sellers.seller_zip_code_prefix (VARCHAR(5); nullable=True)\n- sellers.seller_city (TEXT; nullable=True)\n- sellers.seller_state (VARCHAR(2); nullable=True)\nPrimary key: seller_id"
+  },
+  {
+    "id": "metric:average_delivery_days",
+    "kind": "metric",
+    "source": "semantics",
+    "metric": "average_delivery_days",
+    "text": "Business metric: average_delivery_days\ndescription: Gerçek teslimat tarihi bulunan, teslim edilmiş siparişlerde satın almadan teslimata kadar geçen ortalama gün.\nbase_table: orders\nstatus_filter: orders.order_status = 'delivered'\ndate_column: orders.order_purchase_timestamp\nrequired_columns: [\"orders.order_purchase_timestamp\", \"orders.order_delivered_customer_date\"]"
+  },
+  {
+    "id": "metric:delivered_order_aov",
+    "kind": "metric",
+    "source": "semantics",
+    "metric": "delivered_order_aov",
+    "text": "Business metric: delivered_order_aov\ndescription: Teslim edilmiş ürün içeren sipariş başına ortalama ürün satış geliri.\nnumerator: delivered_product_revenue\ndenominator: COUNT(DISTINCT orders.order_id) among delivered orders with items\ndate_column: orders.order_purchase_timestamp\ncurrency: BRL"
+  },
+  {
+    "id": "metric:delivered_product_revenue",
+    "kind": "metric",
+    "source": "semantics",
+    "metric": "delivered_product_revenue",
+    "text": "Business metric: delivered_product_revenue\ndescription: Teslim edilmiş siparişlerdeki ürün kalemi fiyatlarının toplamı; kargo ücreti ve ödeme toplamları dahil değildir.\nexpression: SUM(order_items.price)\nbase_table: order_items\njoins: [\"order_items.order_id = orders.order_id\"]\nstatus_filter: orders.order_status = 'delivered'\ndate_column: orders.order_purchase_timestamp\ncurrency: BRL"
+  },
+  {
+    "id": "metric:late_delivery_rate",
+    "kind": "metric",
+    "source": "semantics",
+    "metric": "late_delivery_rate",
+    "text": "Business metric: late_delivery_rate\ndescription: Gerçek teslimatı tahmini teslimat tarihinden sonra olan siparişlerin, karşılaştırılabilir teslim edilmiş siparişlere oranı.\nbase_table: orders\nstatus_filter: orders.order_status = 'delivered'\ndate_column: orders.order_purchase_timestamp\nrequired_columns: [\"orders.order_delivered_customer_date\", \"orders.order_estimated_delivery_date\"]"
+  },
+  {
+    "id": "metric:total_orders",
+    "kind": "metric",
+    "source": "semantics",
+    "metric": "total_orders",
+    "text": "Business metric: total_orders\ndescription: Seçilen satın alma tarihi aralığındaki tüm siparişlerin sayısı.\nexpression: COUNT(*)\nbase_table: orders\ndate_column: orders.order_purchase_timestamp\nstatus_filter: None"
+  },
+  {
+    "id": "rule:date_filter",
+    "kind": "rule",
+    "source": "semantics",
+    "rule": "date_filter",
+    "text": "Business rule: date_filter\nSipariş satın alma tarihi başlangıç dahil, bitiş tarihinin ertesi günü hariç olacak şekilde filtrelenir."
+  },
+  {
+    "id": "rule:geolocation_caveat",
+    "kind": "rule",
+    "source": "semantics",
+    "rule": "geolocation_caveat",
+    "text": "Business rule: geolocation_caveat\ngeolocation_zip_code_prefix benzersiz olmadığı için doğrudan join satır sayısını artırabilir."
+  },
+  {
+    "id": "rule:join_caveat",
+    "kind": "rule",
+    "source": "semantics",
+    "rule": "join_caveat",
+    "text": "Business rule: join_caveat\norder_items ve order_payments aynı sipariş üzerinde doğrudan birleştirilirse çoktan çoğa çoğalma ve hatalı toplam oluşabilir."
+  },
+  {
+    "id": "rule:revenue_caveat",
+    "kind": "rule",
+    "source": "semantics",
+    "rule": "revenue_caveat",
+    "text": "Business rule: revenue_caveat\ndelivered_product_revenue muhasebe anlamında net gelir veya ödeme tahsilatı değildir."
+  }
+]
