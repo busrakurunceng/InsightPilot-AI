@@ -6,7 +6,7 @@
 **Dataset:** Brazilian E-Commerce Public Dataset by Olist  
 **Database:** PostgreSQL 18  
 **Development Environment:** Python 3.11, VS Code, Windows, pgAdmin  
-**Current Phase:** Module 1 — Data Foundation & Dashboard
+**Current Phase:** Module 2 — Schema RAG & Semantic Retrieval (Step 2.6, validation in progress)
 
 ### Project Objective
 
@@ -266,6 +266,140 @@ and prepare the initial Streamlit dashboard.
 
 **Next:** Implement the Streamlit BI dashboard and cross-check its values against the validated SQL results.
 
+### Step 12: Streamlit Business Intelligence Dashboard and Module 1 Closure
+
+**Status:** Completed (previously confirmed; detailed dashboard validation evidence should be cross-referenced from the repository)
+
+- Implemented the initial Streamlit BI dashboard on the validated PostgreSQL data foundation.
+- Completed Module 1 and recorded the release milestone `v0.1.0-data-dashboard`.
+- The KPI baselines and reconciliation checks from Step 11 remain the reference for dashboard figures.
+
+**Evidence note:** The uploaded development log ends at Step 11. Detailed dashboard validation commands, outputs, and any additional implementation specifics were not included in this file and should be linked rather than reconstructed.
+
+---
+
+## Module 2 — Schema RAG & Semantic Retrieval
+
+### Step 2.1: Database Schema Extraction
+
+**Status:** Completed
+
+- Implemented `scripts/extract_schema.py` to extract PostgreSQL schema metadata.
+- Generated `docs/schema_catalog.json`.
+- Captured nine tables, 52 columns, and six physical foreign key relationships.
+
+**Validation:** Catalog counts were checked against the existing database schema. A dedicated automated test result for this step has not been supplied in the current record.
+
+**Artifacts:** `scripts/extract_schema.py`, `docs/schema_catalog.json`.
+
+### Step 2.2: Business Semantics
+
+**Status:** Completed
+
+- Created `semantic/business_semantics.yaml` with Turkish table descriptions and grains.
+- Defined five business metrics: `total_orders`, `delivered_product_revenue`, `delivered_order_aov`, `average_delivery_days`, and `late_delivery_rate`.
+- Defined four business rules: `date_filter`, `revenue_caveat`, `join_caveat`, and `geolocation_caveat`.
+- Recorded one logical relationship between `products` and `product_category_name_translation` that is not enforced by a physical foreign key.
+- Implemented `scripts/validate_semantics.py`.
+
+**Validation:** Three semantic validation tests passed in the earlier development workflow.
+
+**Artifacts:** `semantic/business_semantics.yaml`, `scripts/validate_semantics.py`.
+
+### Step 2.3: Schema Chunking
+
+**Status:** Completed
+
+- Implemented `scripts/build_schema_chunks.py`.
+- Generated 18 chunks: nine table chunks, five metric chunks, and four rule chunks.
+- Stored the generated records in `artifacts/schema_chunks.json`.
+
+**Validation:** Four chunking tests passed in the earlier development workflow.
+
+**Artifacts:** `scripts/build_schema_chunks.py`, `artifacts/schema_chunks.json`.
+
+### Step 2.4: Embedding Generation
+
+**Status:** Completed
+
+- Implemented `scripts/build_embeddings.py`.
+- Used `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` to embed schema and business-semantic chunks.
+- Produced 384-dimensional vectors for the 18 chunks.
+- Generated `artifacts/schema_embeddings.npy` and `artifacts/schema_embeddings_metadata.json`.
+- Excluded the generated `.npy` file from Git.
+
+**Validation:** Embedding generation and output dimensions were checked during implementation. A dedicated automated test result is not recorded here.
+
+### Step 2.5: PostgreSQL pgvector Storage
+
+**Status:** Completed
+
+- Installed and enabled pgvector v0.8.1 for PostgreSQL 18 on Windows.
+- Created `public.schema_embeddings` with `chunk_id` as primary key, content, JSONB metadata, and `VECTOR(384)` embedding.
+- Implemented `scripts/upload_embeddings.py` with UPSERT behavior.
+- Verified that all 18 embedding records were present in PostgreSQL.
+
+**Technical issues and resolutions:**
+- The initial database connection configuration contained a placeholder password in `DATABASE_URL`; the local configuration was corrected without recording credentials here.
+- pgvector installation on Windows required a compatible compiled extension and build tooling.
+
+**Validation:** Five upload-embedding tests passed in the earlier workflow; the PostgreSQL record count was verified as 18.
+
+**Artifacts:** `scripts/upload_embeddings.py`, `tests/test_upload_embeddings.py`.
+
+### Step 2.6: Semantic Search and Dependency-Aware Retrieval
+
+**Status:** In progress — manual integration check and dependency resolver tests passed; enrichment tests and retrieval quality evaluation pending.
+
+- Implemented `scripts/search_schema.py` to embed natural-language questions and retrieve similar schema chunks using pgvector cosine distance.
+- Added `app/backend/schema_dependencies.py` to resolve metric dependencies from the YAML semantic definitions.
+- Supported direct table dependencies, tables referenced in expressions and JOINs, and nested metric references such as `delivered_order_aov` → `delivered_product_revenue`.
+- Added dependency enrichment to fetch missing metric/table chunks from PostgreSQL without duplicating semantic results.
+- Kept semantic matches and dependency additions as separate result groups for traceability.
+
+**Observed manual integration result:**
+
+Question: `Siparişlerin yüzde kaçı geç teslim edildi?`
+
+| Rank | Semantic chunk | Cosine similarity |
+|---|---|---:|
+| 1 | `metric:late_delivery_rate` | 0.3276 |
+| 2 | `rule:date_filter` | 0.2884 |
+| 3 | `rule:revenue_caveat` | 0.2550 |
+| 4 | `rule:join_caveat` | 0.2449 |
+| 5 | `metric:delivered_product_revenue` | 0.2048 |
+
+Dependency enrichment added `table:orders` and `table:order_items`.
+
+- Semantic results: **5**
+- Added dependency results: **2**
+- Total unique chunks: **7**
+
+**Automated validation (2026-10-29):**
+
+Command: `python -m pytest tests/test_schema_dependencies.py -v`
+
+- `test_late_delivery_rate_dependencies` — PASSED
+- `test_revenue_dependencies` — PASSED
+- `test_aov_nested_dependencies` — PASSED
+- `test_no_duplicate_dependencies` — PASSED
+- `test_unknown_metric_raises_error` — PASSED
+- `test_total_orders_dependencies` — PASSED
+
+**Result:** 6 passed in 0.13 s (Python 3.11.5; pytest 9.1.1; Windows).
+
+**Technical observation:** The late-delivery question also retrieved the revenue metric among its top five semantic matches. Consequently, enrichment added `table:order_items` even though this table is not needed to calculate the late-delivery rate. The dependency mechanism behaved as designed, but relevance filtering and context precision still need evaluation.
+
+**Pending before Module 2 closure:**
+1. Add automated tests for `enrich_context()` (deduplication, missing database chunks, empty dependency set, nested metrics).
+2. Evaluate retrieval quality using a small documented set of representative business questions and expected chunks.
+3. Record results in `docs/schema_rag_validation_results.md` with pass/fail evidence.
+4. Update the development log with final outcomes; run the relevant test suite and commit tested changes.
+
+**Artifacts:** `scripts/search_schema.py`, `app/backend/schema_dependencies.py`, `tests/test_schema_dependencies.py`.
+
+---
+
 ## Key Technical Decisions
 
 | Decision | Reason |
@@ -278,15 +412,19 @@ and prepare the initial Streamlit dashboard.
 | Data validation before foreign keys | Detect inconsistent relationships before enforcing constraints |
 | Raw data excluded from Git | Avoid unnecessary large files in the repository |
 | Separate Git commits for features and tests | Maintain traceable development history |
+| YAML business semantics | Make KPI definitions, join caveats, and metric dependencies explicit |
+| Multilingual MiniLM embeddings | Support Turkish natural-language schema retrieval |
+| PostgreSQL pgvector | Keep vector search alongside relational business data |
+| Dependency-aware enrichment | Retrieve tables required by matched metrics even when vector search omits them |
 
 ---
 
 ## Next Steps
 
-1. Implement the Streamlit business intelligence dashboard.
-2. Display core KPI cards, monthly revenue trends, order status distribution, top products, top sellers, and delivery performance.
-3. Validate dashboard figures against `docs/kpi_validation_results.md`.
-4. Complete Module 1 and create the `v0.1.0-data-dashboard` release tag.
+1. Finish automated tests for Step 2.6 dependency enrichment.
+2. Build a small retrieval evaluation set, record expected chunks, and measure coverage and irrelevant context.
+3. Create `docs/schema_rag_validation_results.md` with observed evidence and clearly marked pending checks.
+4. Close Module 2 only after validation, documentation, and Git review; then proceed to Module 3 — Text-to-SQL.
 
 
 ## Development Principles
