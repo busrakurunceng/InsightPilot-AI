@@ -11,3 +11,6 @@ data/processed/
 *.pyc
 *.log
 .streamlit/secrets.toml
+
+# Generated embedding arrays
+artifacts/*.npy
