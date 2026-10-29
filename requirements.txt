@@ -1,1 +1,22 @@
+# Data processing
+pandas
+numpy
+
+# PostgreSQL and database integration
+sqlalchemy
+psycopg[binary]
+python-dotenv
+
+# Dashboard and visualization
+streamlit
+plotly
+
+# Testing
 pytest>=9,<10
+
+
+
+PyYAML>=6,<7
+
+
+sentence-transformers>=5,<6

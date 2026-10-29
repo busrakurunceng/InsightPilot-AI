@@ -1,0 +1,26 @@
+{
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "dimensions": 384,
+  "normalized": true,
+  "chunks_source": "artifacts\\schema_chunks.json",
+  "chunk_ids": [
+    "table:customers",
+    "table:geolocation",
+    "table:order_items",
+    "table:order_payments",
+    "table:order_reviews",
+    "table:orders",
+    "table:product_category_name_translation",
+    "table:products",
+    "table:sellers",
+    "metric:average_delivery_days",
+    "metric:delivered_order_aov",
+    "metric:delivered_product_revenue",
+    "metric:late_delivery_rate",
+    "metric:total_orders",
+    "rule:date_filter",
+    "rule:geolocation_caveat",
+    "rule:join_caveat",
+    "rule:revenue_caveat"
+  ]
+}
