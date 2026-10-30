@@ -8,10 +8,6 @@ from sentence_transformers import SentenceTransformer
 from sqlalchemy import create_engine, text
 
 
-# ============================================================
-# 1. PROJE AYARLARI
-# ============================================================
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 if str(PROJECT_ROOT) not in sys.path:
@@ -21,28 +17,22 @@ from app.backend.schema_dependencies import (
     load_semantics,
     metric_dependencies,
 )
+from app.backend.schema_relevance import (
+    rule_dependencies,
+    select_primary_metric,
+    select_relevant_rule,
+)
+
 
 load_dotenv(PROJECT_ROOT / ".env")
 
 MODEL_NAME = (
-    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    "sentence-transformers/"
+    "paraphrase-multilingual-MiniLM-L12-v2"
 )
 
 
-# ============================================================
-# 2. SEMANTIC SEARCH
-# ============================================================
-
 def search_schema(question: str, top_k: int = 5):
-    """
-    Kullanıcı sorusuyla en alakalı schema chunk'larını bulur
-    ve gerekli metrik/tablo bağımlılıklarıyla zenginleştirir.
-
-    Returns:
-        semantic_results: Vektör aramasıyla bulunan kayıtlar
-        dependency_results: YAML bağımlılıklarıyla eklenen kayıtlar
-    """
-
     if not question.strip():
         raise ValueError("Soru boş olamaz.")
 
@@ -54,7 +44,6 @@ def search_schema(question: str, top_k: int = 5):
     if not database_url:
         raise ValueError("DATABASE_URL bulunamadı.")
 
-    # Kullanıcı sorusunu embedding'e dönüştür.
     model = SentenceTransformer(MODEL_NAME)
 
     query_embedding = model.encode(
@@ -62,9 +51,9 @@ def search_schema(question: str, top_k: int = 5):
         normalize_embeddings=True,
     )
 
-    # pgvector'ın kabul ettiği vektör biçimi.
     vector_string = "[" + ",".join(
-        str(float(value)) for value in query_embedding
+        str(float(value))
+        for value in query_embedding
     ) + "]"
 
     engine = create_engine(database_url)
@@ -95,26 +84,28 @@ def search_schema(question: str, top_k: int = 5):
                 },
             ).mappings().all()
 
-        return enrich_context(rows, engine)
+        return enrich_context(
+            rows,
+            engine,
+            question=question,
+        )
 
     finally:
         engine.dispose()
 
 
-# ============================================================
-# 3. DEPENDENCY-AWARE CONTEXT ENRICHMENT
-# ============================================================
-
-def enrich_context(results, engine):
+def enrich_context(results, engine, question=None):
     """
-    Semantic search sonuçlarında bulunan metriklerin
-    bağımlılıklarını business_semantics.yaml üzerinden çözer.
+    Semantic sonuçlara gerekli bağımlılıkları ekler.
 
-    Eksik chunk'ları PostgreSQL'den getirir.
+    question verilirse:
+        Ana metrik ve ilgili iş kuralının bağımlılıklarını
+        çözer.
 
-    Orijinal semantic search sonuçlarını değiştirmez.
+    question verilmezse:
+        Önceki testlerle uyumluluk için bütün metriklerin
+        bağımlılıklarını çözer.
     """
-
     semantics = load_semantics()
 
     semantic_results = [
@@ -129,34 +120,57 @@ def enrich_context(results, engine):
     dependency_ids = []
     seen_dependencies = set()
 
-    # Her semantic sonucu incele.
-    for result in semantic_results:
+    def add_dependency(chunk_id):
+        if chunk_id in existing_ids:
+            return
 
-        if result["chunk_type"] != "metric":
-            continue
+        if chunk_id in seen_dependencies:
+            return
 
-        metric_name = result["chunk_id"].removeprefix(
-            "metric:"
+        seen_dependencies.add(chunk_id)
+        dependency_ids.append(chunk_id)
+
+    if question is None:
+        selected_metrics = [
+            row["chunk_id"]
+            for row in semantic_results
+            if row["chunk_type"] == "metric"
+        ]
+
+        selected_rule = None
+
+    else:
+        primary_metric = select_primary_metric(
+            question,
+            semantic_results,
         )
+
+        selected_metrics = (
+            [primary_metric]
+            if primary_metric is not None
+            else []
+        )
+
+        selected_rule = select_relevant_rule(
+            question,
+            semantic_results,
+        )
+
+    for metric_id in selected_metrics:
+        metric_name = metric_id.removeprefix("metric:")
 
         dependencies = metric_dependencies(
             metric_name,
             semantics,
         )
 
-        # Zaten bulunan chunk'ları tekrar ekleme.
-        for dependency_id in dependencies:
+        for chunk_id in dependencies:
+            add_dependency(chunk_id)
 
-            if dependency_id in existing_ids:
-                continue
+    if selected_rule is not None:
+        for chunk_id in rule_dependencies(selected_rule):
+            add_dependency(chunk_id)
 
-            if dependency_id in seen_dependencies:
-                continue
-
-            seen_dependencies.add(dependency_id)
-            dependency_ids.append(dependency_id)
-
-    # Ek bağımlılık yoksa veritabanına tekrar sorgu atma.
     if not dependency_ids:
         return semantic_results, []
 
@@ -181,7 +195,6 @@ def enrich_context(results, engine):
         for row in rows
     }
 
-    # Beklenen bağımlılıkların tamamı mevcut mu?
     missing_ids = [
         chunk_id
         for chunk_id in dependency_ids
@@ -194,7 +207,6 @@ def enrich_context(results, engine):
             f"{missing_ids}"
         )
 
-    # Bağımlılıkları belirlediğimiz sırayla döndür.
     dependency_results = [
         rows_by_id[chunk_id]
         for chunk_id in dependency_ids
@@ -203,16 +215,10 @@ def enrich_context(results, engine):
     return semantic_results, dependency_results
 
 
-# ============================================================
-# 4. SONUÇLARI EKRANA YAZDIR
-# ============================================================
-
 def main():
-
     if len(sys.argv) < 2:
         print(
-            'Kullanım: python scripts/search_schema.py '
-            '"Sorunuz"'
+            'Kullanım: python scripts/search_schema.py "Sorunuz"'
         )
         return
 
@@ -225,7 +231,16 @@ def main():
         question
     )
 
-    # Semantic search sonuçları
+    primary_metric = select_primary_metric(
+        question,
+        semantic_results,
+    )
+
+    relevant_rule = select_relevant_rule(
+        question,
+        semantic_results,
+    )
+
     print("\n=== SEMANTIC SEARCH RESULTS ===")
 
     if not semantic_results:
@@ -240,7 +255,12 @@ def main():
             f"(similarity={result['similarity']:.4f})"
         )
 
-    # Dependency enrichment sonuçları
+    print("\n=== PRIMARY METRIC ===")
+    print(primary_metric or "Seçilemedi")
+
+    print("\n=== RELEVANT RULE ===")
+    print(relevant_rule or "Seçilemedi")
+
     print("\n=== DEPENDENCY ENRICHMENT ===")
 
     if not dependency_results:
@@ -252,22 +272,19 @@ def main():
     ):
         print(f"{index}. {result['chunk_id']}")
 
-    # Genel özet
     print("\n=== SUMMARY ===")
     print(f"Semantic results: {len(semantic_results)}")
     print(f"Dependency results: {len(dependency_results)}")
 
     unique_ids = {
         result["chunk_id"]
-        for result in semantic_results + dependency_results
+        for result in (
+            semantic_results + dependency_results
+        )
     }
 
     print(f"Total unique chunks: {len(unique_ids)}")
 
-
-# ============================================================
-# 5. PROGRAMIN BAŞLANGIÇ NOKTASI
-# ============================================================
 
 if __name__ == "__main__":
     main()

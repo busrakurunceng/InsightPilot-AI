@@ -1,11 +1,11 @@
 {
-  "evaluation_date": "2026-10-30T12:31:21",
+  "evaluation_date": "2026-10-30T12:57:42",
   "top_k": 5,
   "summary": {
     "total_questions": 5,
     "mean_recall_at_5": 0.6,
     "mean_context_recall": 1.0,
-    "mean_context_precision": 0.4,
+    "mean_context_precision": 0.4324,
     "full_context_recall_count": 5
   },
   "results": [
@@ -39,8 +39,7 @@
         }
       ],
       "dependency_results": [
-        "table:orders",
-        "table:order_items"
+        "table:orders"
       ],
       "all_retrieved": [
         "metric:late_delivery_rate",
@@ -48,19 +47,17 @@
         "rule:revenue_caveat",
         "rule:join_caveat",
         "metric:delivered_product_revenue",
-        "table:orders",
-        "table:order_items"
+        "table:orders"
       ],
       "recall_at_5": 0.5,
       "context_recall": 1.0,
-      "context_precision": 0.2857,
+      "context_precision": 0.3333,
       "missing": [],
       "extra": [
         "metric:delivered_product_revenue",
         "rule:date_filter",
         "rule:join_caveat",
-        "rule:revenue_caveat",
-        "table:order_items"
+        "rule:revenue_caveat"
       ]
     },
     {
@@ -149,8 +146,8 @@
         }
       ],
       "dependency_results": [
-        "table:orders",
-        "table:order_items"
+        "table:order_items",
+        "table:orders"
       ],
       "all_retrieved": [
         "rule:revenue_caveat",
@@ -158,8 +155,8 @@
         "metric:delivered_product_revenue",
         "metric:delivered_order_aov",
         "metric:total_orders",
-        "table:orders",
-        "table:order_items"
+        "table:order_items",
+        "table:orders"
       ],
       "recall_at_5": 0.5,
       "context_recall": 1.0,
@@ -200,29 +197,22 @@
           "similarity": 0.4186
         }
       ],
-      "dependency_results": [
-        "metric:delivered_product_revenue",
-        "table:order_items"
-      ],
+      "dependency_results": [],
       "all_retrieved": [
         "metric:total_orders",
         "table:orders",
         "metric:average_delivery_days",
         "metric:delivered_order_aov",
-        "rule:join_caveat",
-        "metric:delivered_product_revenue",
-        "table:order_items"
+        "rule:join_caveat"
       ],
       "recall_at_5": 1.0,
       "context_recall": 1.0,
-      "context_precision": 0.2857,
+      "context_precision": 0.4,
       "missing": [],
       "extra": [
         "metric:average_delivery_days",
         "metric:delivered_order_aov",
-        "metric:delivered_product_revenue",
-        "rule:join_caveat",
-        "table:order_items"
+        "rule:join_caveat"
       ]
     },
     {
@@ -256,8 +246,8 @@
         }
       ],
       "dependency_results": [
-        "table:order_items",
-        "table:orders"
+        "table:orders",
+        "table:order_items"
       ],
       "all_retrieved": [
         "rule:revenue_caveat",
@@ -265,8 +255,8 @@
         "table:order_payments",
         "metric:delivered_product_revenue",
         "metric:delivered_order_aov",
-        "table:order_items",
-        "table:orders"
+        "table:orders",
+        "table:order_items"
       ],
       "recall_at_5": 0.6667,
       "context_recall": 1.0,
