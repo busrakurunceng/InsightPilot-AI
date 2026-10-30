@@ -1,13 +1,14 @@
+
 # InsightPilot AI — Schema RAG Validation Results
 
 **Module:** 2 — Schema RAG & Semantic Retrieval  
-**Status:** Step 2.6 unit tests and manual integration check passed; retrieval quality evaluation pending  
+**Status:** Module 2 MVP retrieval implementation and 25-question evaluation completed; release tag pending  
 **Environment:** Windows, Python 3.11.5, pytest 9.1.1, PostgreSQL 18, pgvector  
-**Evidence:** Local terminal outputs recorded during development (29 October 2026)
+**Evidence:** Local terminal outputs recorded during development (29–30 October 2026)
 
 ## 1. Scope
 
-This document records observed validation evidence for schema extraction, business semantics, schema chunking, embedding generation and upload, semantic search, and dependency-aware context enrichment. A passing unit test is not equivalent to a full end-to-end or retrieval-quality evaluation.
+This document records observed validation evidence for schema extraction, business semantics, schema chunking, embedding generation and upload, semantic search, context selection, dependency enrichment, and retrieval robustness. A passing unit test is not equivalent to end-to-end Text-to-SQL correctness.
 
 ## 2. Data and schema baseline
 
@@ -33,18 +34,11 @@ This document records observed validation evidence for schema extraction, busine
 
 Command: `python -m pytest tests/ -v`
 
-**Observed:** `31 passed, 2 skipped in 20.17s` (33 collected). No failed tests. The two skipped cases require `RUN_DB_TESTS=1` and a local PostgreSQL connection.
+**Most recent observed result (30 October 2026):** `70 passed, 2 skipped` (72 collected). No failures. The two skipped cases require `RUN_DB_TESTS=1` and a local PostgreSQL connection.
 
-| Test module | Passed | Skipped |
-|---|---:|---:|
-| `test_dashboard_kpis.py` | 2 | 2 |
-| `test_embeddings.py` | 6 | 0 |
-| `test_schema_chunks.py` | 4 | 0 |
-| `test_schema_dependencies.py` | 6 | 0 |
-| `test_schema_search.py` | 5 | 0 |
-| `test_semantic_validation.py` | 3 | 0 |
-| `test_upload_embeddings.py` | 5 | 0 |
-| **Total** | **31** | **2** |
+This includes dashboard, embeddings, schema chunking, dependency resolution, schema search, semantic validation, context selection, metric/rule relevance, retrieval evaluation, benchmark validation, and upload tests.
+
+The earlier Step 2.6 regression baseline was **31 passed, 2 skipped** (33 collected); it has been superseded by the expanded test suite. Passing tests confirm tested code behavior, not retrieval correctness on every question.
 
 ### 3.2 PostgreSQL-enabled dashboard checks
 
@@ -85,31 +79,64 @@ python scripts/search_schema.py "Siparişlerin yüzde kaçı geç teslim edildi?
 
 **Summary:** 5 semantic hits + 2 dependency hits = **7 unique chunks**. This confirms a successful manual end-to-end run against the local PostgreSQL schema-embedding table for this query.
 
-**Interpretation:** `table:orders` is required for late-delivery rate. `table:order_items` was included because the top-five semantic hits also contained `metric:delivered_product_revenue`; it is not needed to compute late-delivery rate. The implementation expands dependencies for every retrieved metric, not just the highest-ranked relevant metric.
+**Historical interpretation (before context filtering):** `table:orders` is required for late-delivery rate. `table:order_items` was included because the initial top-five results contained `metric:delivered_product_revenue`; it is not needed for this calculation. Subsequent context selection addressed this specific baseline case.
 
-## 5. Additional exploratory retrieval observations
+## 5. Retrieval robustness evaluation (30 October 2026)
 
-The following were observed in earlier manual searches, but they are **not yet a scored retrieval benchmark**:
+**Command:** `python scripts/evaluate_retrieval.py` against the local PostgreSQL pgvector index.
 
-| User question | Notable observation |
-|---|---|
-| Delivered-order revenue | `metric:delivered_product_revenue` appeared at rank 2; `rule:join_caveat` at rank 1. |
-| Late delivery percentage | `metric:late_delivery_rate` appeared at rank 1. |
-| Best-selling products | `table:products` appeared at rank 3, but `table:order_items` was absent from the initial top five. |
-| Joining orders and payments | `rule:revenue_caveat` and `rule:join_caveat` appeared in the top two. |
+**Benchmark:** `artifacts/evaluations/schema_benchmark.json` — 25 labeled questions across five categories.
 
-These observations motivate a future question-level relevance set and measurements such as Recall@k and context precision. They do not establish retrieval accuracy percentages.
+| Measure | Result |
+|---|---:|
+| Mean Raw Recall@5 | 57.33% |
+| Mean Context Recall | 79.67% |
+| Mean Context Precision | 65.80% |
+| Perfect final contexts | 10/25 |
+| Questions with missing or extra chunks | 15 |
 
-## 6. Known limitations and open validation work
+### Category results
 
-1. **Context noise:** Expanding all retrieved metric dependencies can add irrelevant tables; consider selecting or reranking relevant metrics before enrichment.
-2. **Table discovery:** Dependency enrichment only follows metrics already retrieved. It does not guarantee discovery of all tables needed for arbitrary questions.
-3. **Benchmark not yet performed:** No labeled question-to-chunk relevance dataset, Recall@k, precision, or threshold comparison has been completed.
-4. **Live integration coverage:** The manual retrieval command succeeded, but automated `enrich_context()` tests mock database results. A dedicated automated live retrieval integration test remains optional future work.
-5. **SQL generation:** Module 2 retrieves context only. Text-to-SQL generation, SQL safety checks, and agent orchestration belong to later modules.
+| Category | Context Recall | Context Precision |
+|---|---:|---:|
+| Baseline | 100.00% | 100.00% |
+| Paraphrase | 70.00% | 44.00% |
+| Business semantics | 80.00% | 60.00% |
+| Relationships | 80.00% | 57.00% |
+| Complex | 68.33% | 68.00% |
 
-## 7. Conclusion and next actions
+### Difficulty results
 
-**Validated:** 31 non-database-dependent tests passed; the two database-gated dashboard tests passed when enabled; dependency-aware semantic retrieval succeeded manually for a late-delivery question.
+| Difficulty | Context Recall | Context Precision |
+|---|---:|---:|
+| Supported | 89.29% | 80.00% |
+| Challenge | 67.42% | 47.73% |
 
-**Pending before final Module 2 quality sign-off:** establish a small labeled question set, evaluate relevance and unnecessary context, decide whether to improve retrieval/reranking, then record results. Commit tested Step 2.6 code and this validation document as appropriate. Keep the development log synchronized with actual status.
+**Interpretation:** Context enrichment and filtering improved mean recall compared with raw Top-5 retrieval, but the result is not uniformly reliable. The five baseline questions achieved perfect final context recall and precision; broader wording and question types exposed limitations. These are retrieval-context measurements, **not SQL execution accuracy**.
+
+**Observed failure examples:**
+
+- Q07, “Sipariş adedini öğrenmek istiyorum.” — `metric:total_orders` was missing from the final context.
+- Q08, “Ortalama sepet tutarı nedir?” — required order tables were missing from the final context.
+- Q13–Q14 — business/date rules appeared in raw retrieval but required table dependencies were missing.
+- Q19 — an order-review relationship question incorrectly selected `rule:join_caveat`, missing `table:order_reviews`.
+- Q21–Q23 — multi-metric questions retained only one requested metric.
+- Q25 — “En iyi müşterilerimiz kimler?” remains ambiguous and lacks necessary table context.
+
+**Generated reports:**
+
+- `artifacts/evaluations/schema_robustness_evaluation.json`
+- `artifacts/evaluations/schema_robustness_evaluation.csv`
+
+## 6. Known limitations and deferred work
+
+1. **Turkish paraphrases:** Hard-coded intent patterns do not cover all equivalent expressions; fallback Top-5 context can be noisy.
+2. **Single primary metric:** Multiple requested metrics are not consistently retained.
+3. **Business rules:** Some specialized rules lack reliable routing and dependency expansion.
+4. **Relationships:** Generic relationship keywords can select an unrelated join warning; some relevant tables are missed.
+5. **Ambiguity:** Vague questions do not yet trigger a dedicated clarification mechanism.
+6. **Live integration:** The benchmark exercised live retrieval, while some automated dependency tests use mocks. End-to-end Text-to-SQL safety and correctness are not validated in Module 2.
+
+**MVP decision:** Preserve the measured baseline and defer advanced retrieval optimization until it is informed by the first constrained Text-to-SQL workflow. Downstream SQL generation must include independent validation and restricted read-only execution; retrieval alone is not a safety guarantee.
+
+**Next module:** Module 3 — Text-to-SQL Engine.

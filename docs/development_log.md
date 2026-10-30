@@ -6,7 +6,7 @@
 **Dataset:** Brazilian E-Commerce Public Dataset by Olist  
 **Database:** PostgreSQL 18  
 **Development Environment:** Python 3.11, VS Code, Windows, pgAdmin  
-**Current Phase:** Module 2 — Schema RAG & Semantic Retrieval (Step 2.6, validation in progress)
+**Current Phase:** Module 2 — Schema RAG & Semantic Retrieval (MVP implementation and evaluation complete; release tag pending)
 
 ### Project Objective
 
@@ -268,13 +268,13 @@ and prepare the initial Streamlit dashboard.
 
 ### Step 12: Streamlit Business Intelligence Dashboard and Module 1 Closure
 
-**Status:** Completed (previously confirmed; detailed dashboard validation evidence should be cross-referenced from the repository)
+**Status:** Completed — released as `v0.1.0-data-dashboard`
 
 - Implemented the initial Streamlit BI dashboard on the validated PostgreSQL data foundation.
 - Completed Module 1 and recorded the release milestone `v0.1.0-data-dashboard`.
 - The KPI baselines and reconciliation checks from Step 11 remain the reference for dashboard figures.
 
-**Evidence note:** The uploaded development log ends at Step 11. Detailed dashboard validation commands, outputs, and any additional implementation specifics were not included in this file and should be linked rather than reconstructed.
+**Evidence:** `docs/kpi_validation_results.md` and `tests/test_dashboard_kpis.py` provide KPI reference checks; the dashboard release is recorded by the `v0.1.0-data-dashboard` Git tag.
 
 ---
 
@@ -349,54 +349,73 @@ and prepare the initial Streamlit dashboard.
 
 ### Step 2.6: Semantic Search and Dependency-Aware Retrieval
 
-**Status:** In progress — manual integration check and dependency resolver tests passed; enrichment tests and retrieval quality evaluation pending.
+**Status:** Completed
 
-- Implemented `scripts/search_schema.py` to embed natural-language questions and retrieve similar schema chunks using pgvector cosine distance.
-- Added `app/backend/schema_dependencies.py` to resolve metric dependencies from the YAML semantic definitions.
-- Supported direct table dependencies, tables referenced in expressions and JOINs, and nested metric references such as `delivered_order_aov` → `delivered_product_revenue`.
-- Added dependency enrichment to fetch missing metric/table chunks from PostgreSQL without duplicating semantic results.
-- Kept semantic matches and dependency additions as separate result groups for traceability.
+- Implemented `scripts/search_schema.py` to embed Turkish natural-language questions and search pgvector using cosine similarity.
+- Implemented `app/backend/schema_dependencies.py` for direct and nested metric dependencies derived from the semantic YAML.
+- Added dependency enrichment to retrieve required chunks missing from the initial vector search.
+- Preserved separate semantic and dependency result groups for traceability.
 
-**Observed manual integration result:**
+**Initial integration evidence (29 October 2026):** The late-delivery question retrieved `metric:late_delivery_rate` at rank 1 (similarity 0.3276). Initial dependency enrichment included `table:orders` and the irrelevant `table:order_items`, motivating subsequent context filtering.
 
-Question: `Siparişlerin yüzde kaçı geç teslim edildi?`
+**Validation:** Six dependency tests passed at this stage. Subsequent integration and regression tests are summarized below.
 
-| Rank | Semantic chunk | Cosine similarity |
-|---|---|---:|
-| 1 | `metric:late_delivery_rate` | 0.3276 |
-| 2 | `rule:date_filter` | 0.2884 |
-| 3 | `rule:revenue_caveat` | 0.2550 |
-| 4 | `rule:join_caveat` | 0.2449 |
-| 5 | `metric:delivered_product_revenue` | 0.2048 |
+**Artifacts:** `scripts/search_schema.py`, `app/backend/schema_dependencies.py`, `tests/test_schema_dependencies.py`, `tests/test_schema_search.py`.
 
-Dependency enrichment added `table:orders` and `table:order_items`.
+### Step 2.7: Retrieval Validation and Context Selection
 
-- Semantic results: **5**
-- Added dependency results: **2**
-- Total unique chunks: **7**
+**Status:** Completed for MVP
 
-**Automated validation (2026-10-29):**
+- Added metric-intent relevance scoring and join-rule selection in `app/backend/schema_relevance.py`.
+- Added primary-context filtering in `app/backend/context_selector.py`.
+- Enriched selected metrics and join rules with their required table and nested-metric chunks.
+- Preserved fallback semantic results when no supported intent is identified.
+- Added automated tests for context selection, relevance, rule selection, and integration behavior.
 
-Command: `python -m pytest tests/test_schema_dependencies.py -v`
+**Technical trade-off:** Primary-metric selection improves context precision for supported single-metric questions but does not support all paraphrases or multi-metric questions. This is an explicitly deferred improvement, not a completed feature.
 
-- `test_late_delivery_rate_dependencies` — PASSED
-- `test_revenue_dependencies` — PASSED
-- `test_aov_nested_dependencies` — PASSED
-- `test_no_duplicate_dependencies` — PASSED
-- `test_unknown_metric_raises_error` — PASSED
-- `test_total_orders_dependencies` — PASSED
+**Artifacts:** `app/backend/schema_relevance.py`, `app/backend/context_selector.py`, `scripts/search_schema.py`, related `tests/test_*.py`.
 
-**Result:** 6 passed in 0.13 s (Python 3.11.5; pytest 9.1.1; Windows).
+### Step 2.8: Retrieval Evaluation and Robustness Benchmark
 
-**Technical observation:** The late-delivery question also retrieved the revenue metric among its top five semantic matches. Consequently, enrichment added `table:order_items` even though this table is not needed to calculate the late-delivery rate. The dependency mechanism behaved as designed, but relevance filtering and context precision still need evaluation.
+**Status:** Completed for MVP (through Step 2.8.5)
 
-**Pending before Module 2 closure:**
-1. Add automated tests for `enrich_context()` (deduplication, missing database chunks, empty dependency set, nested metrics).
-2. Evaluate retrieval quality using a small documented set of representative business questions and expected chunks.
-3. Record results in `docs/schema_rag_validation_results.md` with pass/fail evidence.
-4. Update the development log with final outcomes; run the relevant test suite and commit tested changes.
+- Separated raw Top-5 retrieval results from selected and dependency-enriched final context.
+- Implemented evaluation metrics for raw Recall@5, final context recall, and final context precision.
+- Built a labeled 25-question benchmark spanning five categories: baseline, paraphrase, business semantics, relationships, and complex questions.
+- Saved machine-readable benchmark and evaluation outputs under `artifacts/evaluations/`.
+- Added tests for benchmark validation, metric calculations, and summary aggregation.
 
-**Artifacts:** `scripts/search_schema.py`, `app/backend/schema_dependencies.py`, `tests/test_schema_dependencies.py`.
+**Observed evaluation (30 October 2026; live PostgreSQL retrieval):**
+
+| Measure | Result |
+|---|---:|
+| Questions | 25 |
+| Mean Raw Recall@5 | 57.33% |
+| Mean Context Recall | 79.67% |
+| Mean Context Precision | 65.80% |
+| Perfect final context | 10/25 |
+| Baseline category recall / precision | 100.00% / 100.00% |
+| Paraphrase category recall / precision | 70.00% / 44.00% |
+| Questions with missing or extra chunks | 15 |
+
+**Automated regression result:** `python -m pytest tests/ -v` — **70 passed, 2 skipped** (72 collected). Skipped tests are optional database-backed dashboard checks. Passing unit tests do not imply perfect retrieval quality.
+
+**Known limitations:** Some Turkish paraphrases are missed; rule selection is incomplete; generic relationship terms may select an unrelated join caveat; multiple requested metrics are reduced to one primary metric; complex or ambiguous requests need additional handling. These limitations are documented rather than optimized further before the first end-to-end MVP.
+
+**Artifacts:** `scripts/evaluate_retrieval.py`, `artifacts/evaluations/schema_benchmark.json`, `artifacts/evaluations/schema_robustness_evaluation.json`, `artifacts/evaluations/schema_robustness_evaluation.csv`, `tests/test_retrieval_benchmark.py`, `tests/test_retrieval_evaluation.py`.
+
+**Detailed evidence:** `docs/schema_rag_validation_results.md`.
+
+### Module 2 — MVP Closure
+
+**Implementation and evaluation status:** Complete. **Git release tag:** Pending creation/verification (`v0.2.0-schema-rag`).
+
+Module 2 delivers schema/metric/rule retrieval and dependency-enriched context for the next module. It does not implement LLM-based SQL generation, SQL execution, or an end-user conversational interface.
+
+**Deferred to future iterations:** Expanded Turkish paraphrase coverage, advanced rule/relationship routing, multi-metric retrieval, ambiguity detection, and broader live integration coverage.
+
+**Next:** Module 3 — Text-to-SQL Engine. Generated SQL must be validated and executed only with appropriately restricted read-only access; unsupported or ambiguous requests must not silently become unrestricted queries.
 
 ---
 
@@ -421,11 +440,10 @@ Command: `python -m pytest tests/test_schema_dependencies.py -v`
 
 ## Next Steps
 
-1. Finish automated tests for Step 2.6 dependency enrichment.
-2. Build a small retrieval evaluation set, record expected chunks, and measure coverage and irrelevant context.
-3. Create `docs/schema_rag_validation_results.md` with observed evidence and clearly marked pending checks.
-4. Close Module 2 only after validation, documentation, and Git review; then proceed to Module 3 — Text-to-SQL.
-
+1. Confirm Module 2 documentation and benchmark outputs are committed, with a clean working tree.
+2. Run `python -m pytest tests/ -q` as the final regression check.
+3. Create and push the annotated Module 2 tag `v0.2.0-schema-rag` after validation.
+4. Begin Module 3 — Text-to-SQL Engine, starting with a constrained, read-only SQL generation and validation flow.
 
 ## Development Principles
 

@@ -4,12 +4,12 @@
 
 InsightPilot AI is an incremental AI engineering project aiming to make e-commerce business data accessible through natural-language questions, validated SQL, and analytical visualizations.
 
-**Current deliverable (Module 1):** a working, date-filtered Streamlit business intelligence dashboard backed by PostgreSQL. **Natural-language querying, RAG, and autonomous agent workflows are planned, not implemented yet.**
+**Current deliverable (Modules 1–2):** a validated PostgreSQL-backed Streamlit business intelligence dashboard and an MVP Schema RAG / semantic retrieval layer. **Text-to-SQL, conversational querying, and autonomous agent workflows are not implemented yet.**
 
 ## Project Objectives
 
-- Translate natural-language business questions into SQL (planned).
-- Use Retrieval-Augmented Generation (RAG) to retrieve schema and metric context (planned).
+- Translate natural-language business questions into SQL (planned for Module 3).
+- Retrieve schema, metric, and business-rule context using Schema RAG (MVP implemented).
 - Validate generated SQL before execution (planned).
 - Analyze PostgreSQL data and present results in an interactive dashboard (initial dashboard implemented).
 - Develop multi-step analytical workflows using agentic AI (planned).
@@ -24,7 +24,7 @@ InsightPilot AI is an incremental AI engineering project aiming to make e-commer
 | Dashboard | Streamlit, Plotly | In use |
 | Configuration and tests | python-dotenv, Pytest | In use |
 | LLM orchestration | LangChain, LangGraph | Planned |
-| Semantic retrieval | pgvector, embeddings | Planned |
+| Semantic retrieval | pgvector, sentence-transformers embeddings | In use (Module 2) |
 | SQL validation | SQLGlot | Planned |
 | API | FastAPI | Planned |
 | Deployment | Docker, GitHub Actions | Planned |
@@ -39,46 +39,62 @@ The local PostgreSQL database is named `insightpilot_db`. The nine source tables
 
 ## Current Architecture
 
+Module 1's dashboard and Module 2's Schema RAG are implemented as separate, reusable paths within the same Python repository. There is no standalone HTTP API yet.
+
 ```text
+Dashboard path:
 Streamlit UI (app/frontend/main.py)
-             |
-             v
-Analytics / parameterized SQL (app/backend/analytics.py)
-             |
-             v
-Database connection (app/backend/db.py)
-             |
-             v
-PostgreSQL (insightpilot_db)
+    -> Analytics / parameterized SQL (app/backend/analytics.py)
+    -> Database connection (app/backend/db.py)
+    -> PostgreSQL (insightpilot_db)
+
+Schema RAG path (currently available through scripts, not the dashboard UI):
+Natural-language question
+    -> Embedding + pgvector retrieval (scripts/search_schema.py)
+    -> Intent / rule-based context selection (app/backend/)
+    -> Metric and rule dependency enrichment (app/backend/)
+    -> Schema / metric / rule context for future Text-to-SQL
+
+Semantic source: semantic/business_semantics.yaml
+Schema source: docs/schema_catalog.json
+Generated chunks / embeddings: artifacts/
 ```
 
-The frontend and backend modules currently run within **one Python/Streamlit application**. A separate HTTP backend/API is not part of Module 1.
+The RAG layer does **not** generate or execute LLM-authored SQL. The dashboard continues to use application-defined SQL.
+
+### Repository layout (selected paths)
 
 ```text
 app/
-├── __init__.py
-├── backend/
-│   ├── __init__.py
-│   ├── db.py
-│   └── analytics.py
-├── database/
-│   ├── kpi_queries.sql
-│   ├── indexes.sql
-│   └── index_benchmarks.sql
-└── frontend/
-    ├── __init__.py
-    └── main.py
-
-tests/
-└── test_dashboard_kpis.py
-
-docs/
-├── development_log.md
-├── index_performance.md
-└── kpi_validation_results.md
+  backend/       # Analytics, database access, retrieval selection and dependencies
+  database/      # Database schema, constraints, indexes and SQL references
+  frontend/      # Streamlit dashboard
+semantic/         # YAML business semantics
+scripts/          # Data preparation, embedding, retrieval and evaluation utilities
+artifacts/        # Generated retrieval inputs and evaluation outputs
+tests/            # Automated tests
+docs/             # Validation evidence and development log
 ```
 
-This is a **relevant-file overview**, not an exhaustive directory listing.
+This is a relevant-file overview, not an exhaustive directory listing.
+
+## Schema RAG — Module 2 MVP
+
+- Extracted metadata for nine tables, 52 columns, and six physical foreign keys.
+- Defined five business metrics, four business rules, and a logical category-translation relationship.
+- Generated 18 schema chunks (nine tables, five metrics, four rules).
+- Generated 384-dimensional multilingual MiniLM embeddings and stored 18 records in PostgreSQL with pgvector.
+- Implemented semantic Top-5 retrieval, intent/rule-based context selection, and dependency enrichment.
+- Evaluated retrieval using 25 labeled questions across baseline, paraphrase, business semantics, relationships, and complex categories.
+
+| Retrieval measure | 25-question benchmark |
+|---|---:|
+| Mean Raw Recall@5 | 57.33% |
+| Mean final Context Recall | 79.67% |
+| Mean final Context Precision | 65.80% |
+| Perfect final contexts | 10/25 |
+
+These are **retrieval-context metrics**, not SQL accuracy or end-to-end question-answering accuracy. Baseline questions achieved 100% final context recall and precision; paraphrases, multiple metrics, complex joins, and specialized rules remain limited. See `docs/schema_rag_validation_results.md` for evidence and known limitations.
 
 ## Implemented Dashboard
 
@@ -161,32 +177,38 @@ python -m streamlit run app/frontend/main.py
 
 Streamlit displays the local URL in the terminal (typically `http://localhost:8501`).
 
-## Tests
+## Tests and Retrieval Evaluation
 
-Run unit tests without requiring a database connection:
+Run the complete automated test suite from the repository root:
 
 ```powershell
-python -m pytest -q tests/test_dashboard_kpis.py
+python -m pytest tests/ -q
 ```
 
-Expected for the current four-test suite: **2 passed, 2 skipped**. The two skipped tests are optional PostgreSQL integration tests.
+**Last observed:** `70 passed, 2 skipped` (30 October 2026). The two skipped cases are optional database-backed dashboard integration tests.
 
-To run all four tests against the **complete, unchanged** local Olist database:
+To run those optional checks against the **complete, unchanged** local Olist database:
 
 ```powershell
-$env:RUN_DB_TESTS="1"
-python -m pytest -q tests/test_dashboard_kpis.py
+$env:RUN_DB_TESTS = "1"
+python -m pytest tests/test_dashboard_kpis.py -v
 Remove-Item Env:RUN_DB_TESTS
 ```
 
-Last locally reported result: **4 passed**. Integration tests verify reference KPIs and selected-date consistency; they are not intended for modified or partial datasets.
+To rerun the labeled retrieval benchmark, start PostgreSQL and ensure the `schema_embeddings` table contains the 18 indexed chunks, then run:
+
+```powershell
+python scripts/evaluate_retrieval.py
+```
+
+The benchmark definition is `artifacts/evaluations/schema_benchmark.json`; the evaluation writes `schema_robustness_evaluation.json` and `.csv` in the same directory. Results depend on the configured database, embeddings, and retrieval implementation.
 
 ## Development Roadmap
 
 | Module | Focus | Status |
 |---|---|---|
-| 1 | Data Foundation & Dashboard | Dashboard implemented and tested; final documentation/release in progress |
-| 2 | Schema RAG & Semantic Layer | Planned |
+| 1 | Data Foundation & Dashboard | Completed — `v0.1.0-data-dashboard` |
+| 2 | Schema RAG & Semantic Layer | MVP implemented and evaluated; release closure pending Git tag |
 | 3 | Text-to-SQL Engine | Planned |
 | 4 | Business Analytics | Planned |
 | 5 | LangGraph Agentic Workflows | Planned |
@@ -194,7 +216,7 @@ Last locally reported result: **4 passed**. Integration tests verify reference K
 | 7 | API, CI/CD & Deployment | Planned |
 | 8 | Final Documentation & Portfolio | Planned |
 
-See `docs/development_log.md`, `docs/kpi_validation_results.md`, and `docs/index_performance.md` for implementation history, KPI checks, and database index benchmarks.
+See `docs/development_log.md`, `docs/kpi_validation_results.md`, `docs/index_performance.md`, and `docs/schema_rag_validation_results.md` for implementation history and validation evidence.
 
 ## Security Considerations
 
@@ -209,6 +231,6 @@ A project license has not yet been selected.
 
 ---
 
-**Project status:** Active development — Module 1 release preparation.
+**Project status:** Modules 1–2 implemented (Module 2 MVP closure pending release tag); Module 3 — Text-to-SQL is next.
 
 **Author:** Büşra Kurun
