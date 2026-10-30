@@ -1,0 +1,182 @@
+
+{
+  "version": 1,
+  "description": "InsightPilot AI Schema RAG robustness benchmark",
+  "cases": [
+    {
+      "id": "Q01",
+      "category": "baseline",
+      "difficulty": "supported",
+      "question": "Siparişlerin yüzde kaçı geç teslim edildi?",
+      "expected": ["metric:late_delivery_rate", "table:orders"]
+    },
+    {
+      "id": "Q02",
+      "category": "baseline",
+      "difficulty": "supported",
+      "question": "Teslim edilen siparişlerden ne kadar gelir elde ettik?",
+      "expected": ["metric:delivered_product_revenue", "table:orders", "table:order_items"]
+    },
+    {
+      "id": "Q03",
+      "category": "baseline",
+      "difficulty": "supported",
+      "question": "Sipariş başına ortalama gelir nedir?",
+      "expected": ["metric:delivered_order_aov", "metric:delivered_product_revenue", "table:orders", "table:order_items"]
+    },
+    {
+      "id": "Q04",
+      "category": "baseline",
+      "difficulty": "supported",
+      "question": "Toplam kaç sipariş var?",
+      "expected": ["metric:total_orders", "table:orders"]
+    },
+    {
+      "id": "Q05",
+      "category": "baseline",
+      "difficulty": "supported",
+      "question": "Sipariş ve ödeme tablolarını birleştirirken nelere dikkat etmeliyiz?",
+      "expected": ["rule:join_caveat", "table:orders", "table:order_payments", "table:order_items"]
+    },
+    {
+      "id": "Q06",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Kaç adet sipariş oluşturulmuş?",
+      "expected": ["metric:total_orders", "table:orders"]
+    },
+    {
+      "id": "Q07",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Sipariş adedini öğrenmek istiyorum.",
+      "expected": ["metric:total_orders", "table:orders"]
+    },
+    {
+      "id": "Q08",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Ortalama sepet tutarı nedir?",
+      "expected": ["metric:delivered_order_aov", "metric:delivered_product_revenue", "table:orders", "table:order_items"]
+    },
+    {
+      "id": "Q09",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Teslimatlar ortalama kaç günde tamamlanıyor?",
+      "expected": ["metric:average_delivery_days", "table:orders"]
+    },
+    {
+      "id": "Q10",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Gecikmeli teslim edilen siparişlerin oranı nedir?",
+      "expected": ["metric:late_delivery_rate", "table:orders"]
+    },
+    {
+      "id": "Q11",
+      "category": "business_semantics",
+      "difficulty": "supported",
+      "question": "Teslim edilmiş ürünlerin toplam satış geliri nedir?",
+      "expected": ["metric:delivered_product_revenue", "table:orders", "table:order_items"]
+    },
+    {
+      "id": "Q12",
+      "category": "business_semantics",
+      "difficulty": "supported",
+      "question": "Ortalama teslimat süresi kaç gündür?",
+      "expected": ["metric:average_delivery_days", "table:orders"]
+    },
+    {
+      "id": "Q13",
+      "category": "business_semantics",
+      "difficulty": "challenge",
+      "question": "Gelir metriği ödeme tahsilatını da kapsıyor mu?",
+      "expected": ["rule:revenue_caveat", "metric:delivered_product_revenue", "table:order_items", "table:orders"]
+    },
+    {
+      "id": "Q14",
+      "category": "business_semantics",
+      "difficulty": "challenge",
+      "question": "Tarih aralığının başlangıç ve bitiş sınırları nasıl uygulanıyor?",
+      "expected": ["rule:date_filter", "table:orders"]
+    },
+    {
+      "id": "Q15",
+      "category": "business_semantics",
+      "difficulty": "challenge",
+      "question": "Geolocation tablosunda posta kodu neden tekil değil?",
+      "expected": ["rule:geolocation_caveat", "table:geolocation"]
+    },
+    {
+      "id": "Q16",
+      "category": "relationships",
+      "difficulty": "supported",
+      "question": "Orders ve payments tablolarını JOIN yaparken nelere dikkat etmeliyiz?",
+      "expected": ["rule:join_caveat", "table:orders", "table:order_items", "table:order_payments"]
+    },
+    {
+      "id": "Q17",
+      "category": "relationships",
+      "difficulty": "supported",
+      "question": "Sipariş ve ödeme tabloları arasındaki ilişki nedir?",
+      "expected": ["rule:join_caveat", "table:orders", "table:order_items", "table:order_payments"]
+    },
+    {
+      "id": "Q18",
+      "category": "relationships",
+      "difficulty": "challenge",
+      "question": "Ürün kategorilerinin İngilizce adlarını hangi tablolarla bulabilirim?",
+      "expected": ["table:products", "table:product_category_name_translation"]
+    },
+    {
+      "id": "Q19",
+      "category": "relationships",
+      "difficulty": "challenge",
+      "question": "Müşteri değerlendirmelerini siparişlerle nasıl eşleştiririm?",
+      "expected": ["table:order_reviews", "table:orders"]
+    },
+    {
+      "id": "Q20",
+      "category": "relationships",
+      "difficulty": "challenge",
+      "question": "Sipariş kalemlerini satıcı bilgileriyle nasıl ilişkilendiririm?",
+      "expected": ["table:order_items", "table:sellers"]
+    },
+    {
+      "id": "Q21",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Toplam gelir ve ortalama sipariş tutarı nedir?",
+      "expected": ["metric:delivered_product_revenue", "metric:delivered_order_aov", "table:orders", "table:order_items"]
+    },
+    {
+      "id": "Q22",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Toplam sipariş sayısını ve gecikmeli teslimat oranını göster.",
+      "expected": ["metric:total_orders", "metric:late_delivery_rate", "table:orders"]
+    },
+    {
+      "id": "Q23",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Ortalama teslimat süresiyle geç teslimat oranını karşılaştır.",
+      "expected": ["metric:average_delivery_days", "metric:late_delivery_rate", "table:orders"]
+    },
+    {
+      "id": "Q24",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Müşterilerin hangi şehirlerde yaşadığını göster.",
+      "expected": ["table:customers"]
+    },
+    {
+      "id": "Q25",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "En iyi müşterilerimiz kimler?",
+      "expected": ["table:customers", "table:orders", "table:order_items"]
+    }
+  ]
+}

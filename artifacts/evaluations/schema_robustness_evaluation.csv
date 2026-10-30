@@ -1,0 +1,26 @@
+id,category,difficulty,question,raw_recall_at_5,context_recall,context_precision,missing,extra
+Q01,baseline,supported,Siparişlerin yüzde kaçı geç teslim edildi?,0.5,1.0,1.0,[],[]
+Q02,baseline,supported,Teslim edilen siparişlerden ne kadar gelir elde ettik?,0.3333,1.0,1.0,[],[]
+Q03,baseline,supported,Sipariş başına ortalama gelir nedir?,0.5,1.0,1.0,[],[]
+Q04,baseline,supported,Toplam kaç sipariş var?,1.0,1.0,1.0,[],[]
+Q05,baseline,supported,Sipariş ve ödeme tablolarını birleştirirken nelere dikkat etmeliyiz?,0.5,1.0,1.0,[],[]
+Q06,paraphrase,supported,Kaç adet sipariş oluşturulmuş?,1.0,1.0,0.4,[],"[""metric:delivered_order_aov"", ""rule:join_caveat"", ""table:order_items""]"
+Q07,paraphrase,supported,Sipariş adedini öğrenmek istiyorum.,0.5,0.5,0.2,"[""metric:total_orders""]","[""metric:delivered_order_aov"", ""rule:geolocation_caveat"", ""table:customers"", ""table:order_reviews""]"
+Q08,paraphrase,supported,Ortalama sepet tutarı nedir?,0.5,0.5,0.4,"[""table:order_items"", ""table:orders""]","[""metric:average_delivery_days"", ""metric:late_delivery_rate"", ""rule:revenue_caveat""]"
+Q09,paraphrase,supported,Teslimatlar ortalama kaç günde tamamlanıyor?,0.5,1.0,1.0,[],[]
+Q10,paraphrase,supported,Gecikmeli teslim edilen siparişlerin oranı nedir?,0.5,0.5,0.2,"[""table:orders""]","[""metric:average_delivery_days"", ""metric:delivered_order_aov"", ""metric:delivered_product_revenue"", ""metric:total_orders""]"
+Q11,business_semantics,supported,Teslim edilmiş ürünlerin toplam satış geliri nedir?,0.3333,1.0,1.0,[],[]
+Q12,business_semantics,supported,Ortalama teslimat süresi kaç gündür?,0.5,1.0,1.0,[],[]
+Q13,business_semantics,challenge,Gelir metriği ödeme tahsilatını da kapsıyor mu?,0.5,0.5,0.4,"[""table:order_items"", ""table:orders""]","[""metric:average_delivery_days"", ""metric:delivered_order_aov"", ""metric:late_delivery_rate""]"
+Q14,business_semantics,challenge,Tarih aralığının başlangıç ve bitiş sınırları nasıl uygulanıyor?,0.5,0.5,0.2,"[""table:orders""]","[""metric:average_delivery_days"", ""metric:late_delivery_rate"", ""metric:total_orders"", ""rule:join_caveat""]"
+Q15,business_semantics,challenge,Geolocation tablosunda posta kodu neden tekil değil?,1.0,1.0,0.4,[],"[""metric:late_delivery_rate"", ""rule:revenue_caveat"", ""table:sellers""]"
+Q16,relationships,supported,Orders ve payments tablolarını JOIN yaparken nelere dikkat etmeliyiz?,0.5,1.0,1.0,[],[]
+Q17,relationships,supported,Sipariş ve ödeme tabloları arasındaki ilişki nedir?,0.5,1.0,1.0,[],[]
+Q18,relationships,challenge,Ürün kategorilerinin İngilizce adlarını hangi tablolarla bulabilirim?,1.0,1.0,0.4,[],"[""metric:delivered_order_aov"", ""metric:delivered_product_revenue"", ""metric:total_orders""]"
+Q19,relationships,challenge,Müşteri değerlendirmelerini siparişlerle nasıl eşleştiririm?,0.0,0.5,0.25,"[""table:order_reviews""]","[""rule:join_caveat"", ""table:order_items"", ""table:order_payments""]"
+Q20,relationships,challenge,Sipariş kalemlerini satıcı bilgileriyle nasıl ilişkilendiririm?,0.5,0.5,0.2,"[""table:order_items""]","[""metric:delivered_order_aov"", ""metric:delivered_product_revenue"", ""table:customers"", ""table:product_category_name_translation""]"
+Q21,complex,challenge,Toplam gelir ve ortalama sipariş tutarı nedir?,0.5,0.75,1.0,"[""metric:delivered_order_aov""]",[]
+Q22,complex,challenge,Toplam sipariş sayısını ve gecikmeli teslimat oranını göster.,0.6667,0.6667,1.0,"[""metric:late_delivery_rate""]",[]
+Q23,complex,challenge,Ortalama teslimat süresiyle geç teslimat oranını karşılaştır.,0.6667,0.6667,1.0,"[""metric:average_delivery_days""]",[]
+Q24,complex,challenge,Müşterilerin hangi şehirlerde yaşadığını göster.,1.0,1.0,0.2,[],"[""metric:delivered_order_aov"", ""metric:delivered_product_revenue"", ""metric:total_orders"", ""table:sellers""]"
+Q25,complex,challenge,En iyi müşterilerimiz kimler?,0.3333,0.3333,0.2,"[""table:order_items"", ""table:orders""]","[""metric:average_delivery_days"", ""metric:delivered_order_aov"", ""metric:total_orders"", ""rule:join_caveat""]"

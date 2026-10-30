@@ -1,0 +1,1629 @@
+{
+  "evaluation_date": "2026-10-30T13:27:50",
+  "benchmark_version": 1,
+  "top_k": 5,
+  "summary": {
+    "total_questions": 25,
+    "mean_raw_recall_at_5": 0.5733,
+    "mean_context_recall": 0.7967,
+    "mean_context_precision": 0.658,
+    "full_context_recall_count": 14,
+    "perfect_context_count": 10
+  },
+  "by_category": {
+    "baseline": {
+      "total_questions": 5,
+      "mean_raw_recall_at_5": 0.5667,
+      "mean_context_recall": 1.0,
+      "mean_context_precision": 1.0,
+      "full_context_recall_count": 5,
+      "perfect_context_count": 5
+    },
+    "business_semantics": {
+      "total_questions": 5,
+      "mean_raw_recall_at_5": 0.5667,
+      "mean_context_recall": 0.8,
+      "mean_context_precision": 0.6,
+      "full_context_recall_count": 3,
+      "perfect_context_count": 2
+    },
+    "complex": {
+      "total_questions": 5,
+      "mean_raw_recall_at_5": 0.6333,
+      "mean_context_recall": 0.6833,
+      "mean_context_precision": 0.68,
+      "full_context_recall_count": 1,
+      "perfect_context_count": 0
+    },
+    "paraphrase": {
+      "total_questions": 5,
+      "mean_raw_recall_at_5": 0.6,
+      "mean_context_recall": 0.7,
+      "mean_context_precision": 0.44,
+      "full_context_recall_count": 2,
+      "perfect_context_count": 1
+    },
+    "relationships": {
+      "total_questions": 5,
+      "mean_raw_recall_at_5": 0.5,
+      "mean_context_recall": 0.8,
+      "mean_context_precision": 0.57,
+      "full_context_recall_count": 3,
+      "perfect_context_count": 2
+    }
+  },
+  "by_difficulty": {
+    "challenge": {
+      "total_questions": 11,
+      "mean_raw_recall_at_5": 0.6061,
+      "mean_context_recall": 0.6742,
+      "mean_context_precision": 0.4773,
+      "full_context_recall_count": 3,
+      "perfect_context_count": 0
+    },
+    "supported": {
+      "total_questions": 14,
+      "mean_raw_recall_at_5": 0.5476,
+      "mean_context_recall": 0.8929,
+      "mean_context_precision": 0.8,
+      "full_context_recall_count": 11,
+      "perfect_context_count": 10
+    }
+  },
+  "failures": [
+    {
+      "id": "Q06",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Kaç adet sipariş oluşturulmuş?",
+      "missing": [],
+      "extra": [
+        "metric:delivered_order_aov",
+        "rule:join_caveat",
+        "table:order_items"
+      ]
+    },
+    {
+      "id": "Q07",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Sipariş adedini öğrenmek istiyorum.",
+      "missing": [
+        "metric:total_orders"
+      ],
+      "extra": [
+        "metric:delivered_order_aov",
+        "rule:geolocation_caveat",
+        "table:customers",
+        "table:order_reviews"
+      ]
+    },
+    {
+      "id": "Q08",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Ortalama sepet tutarı nedir?",
+      "missing": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:late_delivery_rate",
+        "rule:revenue_caveat"
+      ]
+    },
+    {
+      "id": "Q10",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Gecikmeli teslim edilen siparişlerin oranı nedir?",
+      "missing": [
+        "table:orders"
+      ],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "metric:total_orders"
+      ]
+    },
+    {
+      "id": "Q13",
+      "category": "business_semantics",
+      "difficulty": "challenge",
+      "question": "Gelir metriği ödeme tahsilatını da kapsıyor mu?",
+      "missing": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:late_delivery_rate"
+      ]
+    },
+    {
+      "id": "Q14",
+      "category": "business_semantics",
+      "difficulty": "challenge",
+      "question": "Tarih aralığının başlangıç ve bitiş sınırları nasıl uygulanıyor?",
+      "missing": [
+        "table:orders"
+      ],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:late_delivery_rate",
+        "metric:total_orders",
+        "rule:join_caveat"
+      ]
+    },
+    {
+      "id": "Q15",
+      "category": "business_semantics",
+      "difficulty": "challenge",
+      "question": "Geolocation tablosunda posta kodu neden tekil değil?",
+      "missing": [],
+      "extra": [
+        "metric:late_delivery_rate",
+        "rule:revenue_caveat",
+        "table:sellers"
+      ]
+    },
+    {
+      "id": "Q18",
+      "category": "relationships",
+      "difficulty": "challenge",
+      "question": "Ürün kategorilerinin İngilizce adlarını hangi tablolarla bulabilirim?",
+      "missing": [],
+      "extra": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "metric:total_orders"
+      ]
+    },
+    {
+      "id": "Q19",
+      "category": "relationships",
+      "difficulty": "challenge",
+      "question": "Müşteri değerlendirmelerini siparişlerle nasıl eşleştiririm?",
+      "missing": [
+        "table:order_reviews"
+      ],
+      "extra": [
+        "rule:join_caveat",
+        "table:order_items",
+        "table:order_payments"
+      ]
+    },
+    {
+      "id": "Q20",
+      "category": "relationships",
+      "difficulty": "challenge",
+      "question": "Sipariş kalemlerini satıcı bilgileriyle nasıl ilişkilendiririm?",
+      "missing": [
+        "table:order_items"
+      ],
+      "extra": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "table:customers",
+        "table:product_category_name_translation"
+      ]
+    },
+    {
+      "id": "Q21",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Toplam gelir ve ortalama sipariş tutarı nedir?",
+      "missing": [
+        "metric:delivered_order_aov"
+      ],
+      "extra": []
+    },
+    {
+      "id": "Q22",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Toplam sipariş sayısını ve gecikmeli teslimat oranını göster.",
+      "missing": [
+        "metric:late_delivery_rate"
+      ],
+      "extra": []
+    },
+    {
+      "id": "Q23",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Ortalama teslimat süresiyle geç teslimat oranını karşılaştır.",
+      "missing": [
+        "metric:average_delivery_days"
+      ],
+      "extra": []
+    },
+    {
+      "id": "Q24",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Müşterilerin hangi şehirlerde yaşadığını göster.",
+      "missing": [],
+      "extra": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "metric:total_orders",
+        "table:sellers"
+      ]
+    },
+    {
+      "id": "Q25",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "En iyi müşterilerimiz kimler?",
+      "missing": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:total_orders",
+        "rule:join_caveat"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "id": "Q01",
+      "category": "baseline",
+      "difficulty": "supported",
+      "question": "Siparişlerin yüzde kaçı geç teslim edildi?",
+      "expected": [
+        "metric:late_delivery_rate",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.3276
+        },
+        {
+          "chunk_id": "rule:date_filter",
+          "similarity": 0.2884
+        },
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.255
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.2449
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.2048
+        }
+      ],
+      "selected_results": [
+        "metric:late_delivery_rate"
+      ],
+      "dependency_results": [
+        "table:orders"
+      ],
+      "final_context": [
+        "metric:late_delivery_rate",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "id": "Q02",
+      "category": "baseline",
+      "difficulty": "supported",
+      "question": "Teslim edilen siparişlerden ne kadar gelir elde ettik?",
+      "expected": [
+        "metric:delivered_product_revenue",
+        "table:orders",
+        "table:order_items"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.4128
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.3858
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.347
+        },
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.339
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.3323
+        }
+      ],
+      "selected_results": [
+        "metric:delivered_product_revenue"
+      ],
+      "dependency_results": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "final_context": [
+        "metric:delivered_product_revenue",
+        "table:order_items",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 0.3333,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "id": "Q03",
+      "category": "baseline",
+      "difficulty": "supported",
+      "question": "Sipariş başına ortalama gelir nedir?",
+      "expected": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "table:orders",
+        "table:order_items"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.2585
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.202
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.1959
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.1918
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.1443
+        }
+      ],
+      "selected_results": [
+        "metric:delivered_order_aov"
+      ],
+      "dependency_results": [
+        "metric:delivered_product_revenue",
+        "table:order_items",
+        "table:orders"
+      ],
+      "final_context": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "table:order_items",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "id": "Q04",
+      "category": "baseline",
+      "difficulty": "supported",
+      "question": "Toplam kaç sipariş var?",
+      "expected": [
+        "metric:total_orders",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.4501
+        },
+        {
+          "chunk_id": "table:orders",
+          "similarity": 0.4411
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.4311
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.4251
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.4186
+        }
+      ],
+      "selected_results": [
+        "metric:total_orders"
+      ],
+      "dependency_results": [
+        "table:orders"
+      ],
+      "final_context": [
+        "metric:total_orders",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 1.0,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "id": "Q05",
+      "category": "baseline",
+      "difficulty": "supported",
+      "question": "Sipariş ve ödeme tablolarını birleştirirken nelere dikkat etmeliyiz?",
+      "expected": [
+        "rule:join_caveat",
+        "table:orders",
+        "table:order_payments",
+        "table:order_items"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.4309
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.4143
+        },
+        {
+          "chunk_id": "table:order_payments",
+          "similarity": 0.2921
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.2501
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.2451
+        }
+      ],
+      "selected_results": [
+        "rule:join_caveat"
+      ],
+      "dependency_results": [
+        "table:orders",
+        "table:order_items",
+        "table:order_payments"
+      ],
+      "final_context": [
+        "rule:join_caveat",
+        "table:orders",
+        "table:order_items",
+        "table:order_payments"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "id": "Q06",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Kaç adet sipariş oluşturulmuş?",
+      "expected": [
+        "metric:total_orders",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "table:orders",
+          "similarity": 0.5228
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.4999
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.4935
+        },
+        {
+          "chunk_id": "table:order_items",
+          "similarity": 0.4921
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.4796
+        }
+      ],
+      "selected_results": [
+        "table:orders",
+        "rule:join_caveat",
+        "metric:total_orders",
+        "table:order_items",
+        "metric:delivered_order_aov"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "table:orders",
+        "rule:join_caveat",
+        "metric:total_orders",
+        "table:order_items",
+        "metric:delivered_order_aov"
+      ],
+      "raw_recall_at_5": 1.0,
+      "context_recall": 1.0,
+      "context_precision": 0.4,
+      "missing": [],
+      "extra": [
+        "metric:delivered_order_aov",
+        "rule:join_caveat",
+        "table:order_items"
+      ]
+    },
+    {
+      "id": "Q07",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Sipariş adedini öğrenmek istiyorum.",
+      "expected": [
+        "metric:total_orders",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "table:customers",
+          "similarity": 0.0499
+        },
+        {
+          "chunk_id": "rule:geolocation_caveat",
+          "similarity": 0.0039
+        },
+        {
+          "chunk_id": "table:order_reviews",
+          "similarity": -0.0008
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": -0.0069
+        },
+        {
+          "chunk_id": "table:orders",
+          "similarity": -0.01
+        }
+      ],
+      "selected_results": [
+        "table:customers",
+        "rule:geolocation_caveat",
+        "table:order_reviews",
+        "metric:delivered_order_aov",
+        "table:orders"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "table:customers",
+        "rule:geolocation_caveat",
+        "table:order_reviews",
+        "metric:delivered_order_aov",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 0.5,
+      "context_precision": 0.2,
+      "missing": [
+        "metric:total_orders"
+      ],
+      "extra": [
+        "metric:delivered_order_aov",
+        "rule:geolocation_caveat",
+        "table:customers",
+        "table:order_reviews"
+      ]
+    },
+    {
+      "id": "Q08",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Ortalama sepet tutarı nedir?",
+      "expected": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "table:orders",
+        "table:order_items"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.3318
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.3106
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.3037
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.2691
+        },
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.2647
+        }
+      ],
+      "selected_results": [
+        "metric:delivered_product_revenue",
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:late_delivery_rate",
+        "rule:revenue_caveat"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "metric:delivered_product_revenue",
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:late_delivery_rate",
+        "rule:revenue_caveat"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 0.5,
+      "context_precision": 0.4,
+      "missing": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:late_delivery_rate",
+        "rule:revenue_caveat"
+      ]
+    },
+    {
+      "id": "Q09",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Teslimatlar ortalama kaç günde tamamlanıyor?",
+      "expected": [
+        "metric:average_delivery_days",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.2787
+        },
+        {
+          "chunk_id": "rule:date_filter",
+          "similarity": 0.2657
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.1822
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.1738
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.1424
+        }
+      ],
+      "selected_results": [
+        "metric:average_delivery_days"
+      ],
+      "dependency_results": [
+        "table:orders"
+      ],
+      "final_context": [
+        "metric:average_delivery_days",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "id": "Q10",
+      "category": "paraphrase",
+      "difficulty": "supported",
+      "question": "Gecikmeli teslim edilen siparişlerin oranı nedir?",
+      "expected": [
+        "metric:late_delivery_rate",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.6471
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.5636
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.5068
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.4954
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.4856
+        }
+      ],
+      "selected_results": [
+        "metric:late_delivery_rate",
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "metric:total_orders"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "metric:late_delivery_rate",
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "metric:total_orders"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 0.5,
+      "context_precision": 0.2,
+      "missing": [
+        "table:orders"
+      ],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "metric:total_orders"
+      ]
+    },
+    {
+      "id": "Q11",
+      "category": "business_semantics",
+      "difficulty": "supported",
+      "question": "Teslim edilmiş ürünlerin toplam satış geliri nedir?",
+      "expected": [
+        "metric:delivered_product_revenue",
+        "table:orders",
+        "table:order_items"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.4962
+        },
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.4252
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.4085
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.3285
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.3202
+        }
+      ],
+      "selected_results": [
+        "metric:delivered_product_revenue"
+      ],
+      "dependency_results": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "final_context": [
+        "metric:delivered_product_revenue",
+        "table:order_items",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 0.3333,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "id": "Q12",
+      "category": "business_semantics",
+      "difficulty": "supported",
+      "question": "Ortalama teslimat süresi kaç gündür?",
+      "expected": [
+        "metric:average_delivery_days",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.5765
+        },
+        {
+          "chunk_id": "rule:date_filter",
+          "similarity": 0.4838
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.481
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.3856
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.3819
+        }
+      ],
+      "selected_results": [
+        "metric:average_delivery_days"
+      ],
+      "dependency_results": [
+        "table:orders"
+      ],
+      "final_context": [
+        "metric:average_delivery_days",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "id": "Q13",
+      "category": "business_semantics",
+      "difficulty": "challenge",
+      "question": "Gelir metriği ödeme tahsilatını da kapsıyor mu?",
+      "expected": [
+        "rule:revenue_caveat",
+        "metric:delivered_product_revenue",
+        "table:order_items",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.4195
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.3856
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.3325
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.3088
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.2554
+        }
+      ],
+      "selected_results": [
+        "rule:revenue_caveat",
+        "metric:delivered_product_revenue",
+        "metric:delivered_order_aov",
+        "metric:late_delivery_rate",
+        "metric:average_delivery_days"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "rule:revenue_caveat",
+        "metric:delivered_product_revenue",
+        "metric:delivered_order_aov",
+        "metric:late_delivery_rate",
+        "metric:average_delivery_days"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 0.5,
+      "context_precision": 0.4,
+      "missing": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:late_delivery_rate"
+      ]
+    },
+    {
+      "id": "Q14",
+      "category": "business_semantics",
+      "difficulty": "challenge",
+      "question": "Tarih aralığının başlangıç ve bitiş sınırları nasıl uygulanıyor?",
+      "expected": [
+        "rule:date_filter",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "rule:date_filter",
+          "similarity": 0.263
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.1722
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.1484
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.1377
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.1318
+        }
+      ],
+      "selected_results": [
+        "rule:date_filter",
+        "metric:late_delivery_rate",
+        "metric:total_orders",
+        "rule:join_caveat",
+        "metric:average_delivery_days"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "rule:date_filter",
+        "metric:late_delivery_rate",
+        "metric:total_orders",
+        "rule:join_caveat",
+        "metric:average_delivery_days"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 0.5,
+      "context_precision": 0.2,
+      "missing": [
+        "table:orders"
+      ],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:late_delivery_rate",
+        "metric:total_orders",
+        "rule:join_caveat"
+      ]
+    },
+    {
+      "id": "Q15",
+      "category": "business_semantics",
+      "difficulty": "challenge",
+      "question": "Geolocation tablosunda posta kodu neden tekil değil?",
+      "expected": [
+        "rule:geolocation_caveat",
+        "table:geolocation"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "table:geolocation",
+          "similarity": 0.5966
+        },
+        {
+          "chunk_id": "rule:geolocation_caveat",
+          "similarity": 0.3971
+        },
+        {
+          "chunk_id": "table:sellers",
+          "similarity": 0.2003
+        },
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.1723
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.1623
+        }
+      ],
+      "selected_results": [
+        "table:geolocation",
+        "rule:geolocation_caveat",
+        "table:sellers",
+        "rule:revenue_caveat",
+        "metric:late_delivery_rate"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "table:geolocation",
+        "rule:geolocation_caveat",
+        "table:sellers",
+        "rule:revenue_caveat",
+        "metric:late_delivery_rate"
+      ],
+      "raw_recall_at_5": 1.0,
+      "context_recall": 1.0,
+      "context_precision": 0.4,
+      "missing": [],
+      "extra": [
+        "metric:late_delivery_rate",
+        "rule:revenue_caveat",
+        "table:sellers"
+      ]
+    },
+    {
+      "id": "Q16",
+      "category": "relationships",
+      "difficulty": "supported",
+      "question": "Orders ve payments tablolarını JOIN yaparken nelere dikkat etmeliyiz?",
+      "expected": [
+        "rule:join_caveat",
+        "table:orders",
+        "table:order_items",
+        "table:order_payments"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.6218
+        },
+        {
+          "chunk_id": "table:order_payments",
+          "similarity": 0.4593
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.3867
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.385
+        },
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.3845
+        }
+      ],
+      "selected_results": [
+        "rule:join_caveat"
+      ],
+      "dependency_results": [
+        "table:orders",
+        "table:order_items",
+        "table:order_payments"
+      ],
+      "final_context": [
+        "rule:join_caveat",
+        "table:orders",
+        "table:order_items",
+        "table:order_payments"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "id": "Q17",
+      "category": "relationships",
+      "difficulty": "supported",
+      "question": "Sipariş ve ödeme tabloları arasındaki ilişki nedir?",
+      "expected": [
+        "rule:join_caveat",
+        "table:orders",
+        "table:order_items",
+        "table:order_payments"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.5302
+        },
+        {
+          "chunk_id": "table:order_payments",
+          "similarity": 0.3988
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.3945
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.3326
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.3024
+        }
+      ],
+      "selected_results": [
+        "rule:join_caveat"
+      ],
+      "dependency_results": [
+        "table:orders",
+        "table:order_items",
+        "table:order_payments"
+      ],
+      "final_context": [
+        "rule:join_caveat",
+        "table:orders",
+        "table:order_items",
+        "table:order_payments"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "id": "Q18",
+      "category": "relationships",
+      "difficulty": "challenge",
+      "question": "Ürün kategorilerinin İngilizce adlarını hangi tablolarla bulabilirim?",
+      "expected": [
+        "table:products",
+        "table:product_category_name_translation"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "table:products",
+          "similarity": 0.5238
+        },
+        {
+          "chunk_id": "table:product_category_name_translation",
+          "similarity": 0.5148
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.3725
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.3697
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.3221
+        }
+      ],
+      "selected_results": [
+        "table:products",
+        "table:product_category_name_translation",
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "metric:total_orders"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "table:products",
+        "table:product_category_name_translation",
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "metric:total_orders"
+      ],
+      "raw_recall_at_5": 1.0,
+      "context_recall": 1.0,
+      "context_precision": 0.4,
+      "missing": [],
+      "extra": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "metric:total_orders"
+      ]
+    },
+    {
+      "id": "Q19",
+      "category": "relationships",
+      "difficulty": "challenge",
+      "question": "Müşteri değerlendirmelerini siparişlerle nasıl eşleştiririm?",
+      "expected": [
+        "table:order_reviews",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.6053
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.5951
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.5859
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.5854
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.5581
+        }
+      ],
+      "selected_results": [
+        "rule:join_caveat"
+      ],
+      "dependency_results": [
+        "table:orders",
+        "table:order_items",
+        "table:order_payments"
+      ],
+      "final_context": [
+        "rule:join_caveat",
+        "table:orders",
+        "table:order_items",
+        "table:order_payments"
+      ],
+      "raw_recall_at_5": 0.0,
+      "context_recall": 0.5,
+      "context_precision": 0.25,
+      "missing": [
+        "table:order_reviews"
+      ],
+      "extra": [
+        "rule:join_caveat",
+        "table:order_items",
+        "table:order_payments"
+      ]
+    },
+    {
+      "id": "Q20",
+      "category": "relationships",
+      "difficulty": "challenge",
+      "question": "Sipariş kalemlerini satıcı bilgileriyle nasıl ilişkilendiririm?",
+      "expected": [
+        "table:order_items",
+        "table:sellers"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "table:sellers",
+          "similarity": 0.4226
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.3911
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.3725
+        },
+        {
+          "chunk_id": "table:product_category_name_translation",
+          "similarity": 0.3643
+        },
+        {
+          "chunk_id": "table:customers",
+          "similarity": 0.3568
+        }
+      ],
+      "selected_results": [
+        "table:sellers",
+        "metric:delivered_product_revenue",
+        "metric:delivered_order_aov",
+        "table:product_category_name_translation",
+        "table:customers"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "table:sellers",
+        "metric:delivered_product_revenue",
+        "metric:delivered_order_aov",
+        "table:product_category_name_translation",
+        "table:customers"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 0.5,
+      "context_precision": 0.2,
+      "missing": [
+        "table:order_items"
+      ],
+      "extra": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "table:customers",
+        "table:product_category_name_translation"
+      ]
+    },
+    {
+      "id": "Q21",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Toplam gelir ve ortalama sipariş tutarı nedir?",
+      "expected": [
+        "metric:delivered_product_revenue",
+        "metric:delivered_order_aov",
+        "table:orders",
+        "table:order_items"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.4827
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.4499
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.4447
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.4439
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.438
+        }
+      ],
+      "selected_results": [
+        "metric:delivered_product_revenue"
+      ],
+      "dependency_results": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "final_context": [
+        "metric:delivered_product_revenue",
+        "table:order_items",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 0.5,
+      "context_recall": 0.75,
+      "context_precision": 1.0,
+      "missing": [
+        "metric:delivered_order_aov"
+      ],
+      "extra": []
+    },
+    {
+      "id": "Q22",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Toplam sipariş sayısını ve gecikmeli teslimat oranını göster.",
+      "expected": [
+        "metric:total_orders",
+        "metric:late_delivery_rate",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.6566
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.5853
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.5702
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.5507
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.5338
+        }
+      ],
+      "selected_results": [
+        "metric:total_orders"
+      ],
+      "dependency_results": [
+        "table:orders"
+      ],
+      "final_context": [
+        "metric:total_orders",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 0.6667,
+      "context_recall": 0.6667,
+      "context_precision": 1.0,
+      "missing": [
+        "metric:late_delivery_rate"
+      ],
+      "extra": []
+    },
+    {
+      "id": "Q23",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Ortalama teslimat süresiyle geç teslimat oranını karşılaştır.",
+      "expected": [
+        "metric:average_delivery_days",
+        "metric:late_delivery_rate",
+        "table:orders"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.5852
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.4875
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.428
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.4265
+        },
+        {
+          "chunk_id": "rule:date_filter",
+          "similarity": 0.3902
+        }
+      ],
+      "selected_results": [
+        "metric:late_delivery_rate"
+      ],
+      "dependency_results": [
+        "table:orders"
+      ],
+      "final_context": [
+        "metric:late_delivery_rate",
+        "table:orders"
+      ],
+      "raw_recall_at_5": 0.6667,
+      "context_recall": 0.6667,
+      "context_precision": 1.0,
+      "missing": [
+        "metric:average_delivery_days"
+      ],
+      "extra": []
+    },
+    {
+      "id": "Q24",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "Müşterilerin hangi şehirlerde yaşadığını göster.",
+      "expected": [
+        "table:customers"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "table:customers",
+          "similarity": 0.444
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.3282
+        },
+        {
+          "chunk_id": "table:sellers",
+          "similarity": 0.287
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.2827
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.2749
+        }
+      ],
+      "selected_results": [
+        "table:customers",
+        "metric:delivered_order_aov",
+        "table:sellers",
+        "metric:delivered_product_revenue",
+        "metric:total_orders"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "table:customers",
+        "metric:delivered_order_aov",
+        "table:sellers",
+        "metric:delivered_product_revenue",
+        "metric:total_orders"
+      ],
+      "raw_recall_at_5": 1.0,
+      "context_recall": 1.0,
+      "context_precision": 0.2,
+      "missing": [],
+      "extra": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "metric:total_orders",
+        "table:sellers"
+      ]
+    },
+    {
+      "id": "Q25",
+      "category": "complex",
+      "difficulty": "challenge",
+      "question": "En iyi müşterilerimiz kimler?",
+      "expected": [
+        "table:customers",
+        "table:orders",
+        "table:order_items"
+      ],
+      "raw_results": [
+        {
+          "chunk_id": "table:customers",
+          "similarity": 0.3827
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.3417
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.328
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.3173
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.3011
+        }
+      ],
+      "selected_results": [
+        "table:customers",
+        "metric:delivered_order_aov",
+        "metric:total_orders",
+        "rule:join_caveat",
+        "metric:average_delivery_days"
+      ],
+      "dependency_results": [],
+      "final_context": [
+        "table:customers",
+        "metric:delivered_order_aov",
+        "metric:total_orders",
+        "rule:join_caveat",
+        "metric:average_delivery_days"
+      ],
+      "raw_recall_at_5": 0.3333,
+      "context_recall": 0.3333,
+      "context_precision": 0.2,
+      "missing": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:total_orders",
+        "rule:join_caveat"
+      ]
+    }
+  ]
+}
