@@ -13,6 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from app.backend.context_selector import select_context
 from app.backend.schema_dependencies import (
     load_semantics,
     metric_dependencies,
@@ -96,21 +97,67 @@ def search_schema(question: str, top_k: int = 5):
 
 def enrich_context(results, engine, question=None):
     """
-    Semantic sonuçlara gerekli bağımlılıkları ekler.
+    Semantic sonuçları seçer ve gerekli bağımlılıkları ekler.
 
-    question verilirse:
-        Ana metrik ve ilgili iş kuralının bağımlılıklarını
-        çözer.
+    question=None:
+        Eski davranış korunur.
 
-    question verilmezse:
-        Önceki testlerle uyumluluk için bütün metriklerin
-        bağımlılıklarını çözer.
+    question verildiğinde:
+        1. Context selection
+        2. Metric/rule dependency enrichment
     """
     semantics = load_semantics()
 
-    semantic_results = [
-        dict(row) for row in results
+    raw_results = [
+        dict(row)
+        for row in results
     ]
+
+    if question is None:
+        semantic_results = raw_results
+
+        selected_metrics = [
+            row["chunk_id"]
+            for row in semantic_results
+            if row["chunk_type"] == "metric"
+        ]
+
+        selected_rule = None
+
+    else:
+        semantic_results = select_context(
+            question,
+            raw_results,
+        )
+
+        primary_metric = select_primary_metric(
+            question,
+            raw_results,
+        )
+
+        selected_metrics = (
+            [primary_metric]
+            if primary_metric is not None
+            and any(
+                row["chunk_id"] == primary_metric
+                for row in semantic_results
+            )
+            else []
+        )
+
+        selected_rule = select_relevant_rule(
+            question,
+            raw_results,
+        )
+
+        if selected_rule is not None and any(
+            row["chunk_id"] == selected_rule
+            for row in semantic_results
+        ):
+            # İlişki sorularında rule selection öncelikli.
+            selected_metrics = []
+        else:
+            selected_rule = None
 
     existing_ids = {
         row["chunk_id"]
@@ -129,32 +176,6 @@ def enrich_context(results, engine, question=None):
 
         seen_dependencies.add(chunk_id)
         dependency_ids.append(chunk_id)
-
-    if question is None:
-        selected_metrics = [
-            row["chunk_id"]
-            for row in semantic_results
-            if row["chunk_type"] == "metric"
-        ]
-
-        selected_rule = None
-
-    else:
-        primary_metric = select_primary_metric(
-            question,
-            semantic_results,
-        )
-
-        selected_metrics = (
-            [primary_metric]
-            if primary_metric is not None
-            else []
-        )
-
-        selected_rule = select_relevant_rule(
-            question,
-            semantic_results,
-        )
 
     for metric_id in selected_metrics:
         metric_name = metric_id.removeprefix("metric:")
@@ -231,20 +252,10 @@ def main():
         question
     )
 
-    primary_metric = select_primary_metric(
-        question,
-        semantic_results,
-    )
-
-    relevant_rule = select_relevant_rule(
-        question,
-        semantic_results,
-    )
-
-    print("\n=== SEMANTIC SEARCH RESULTS ===")
+    print("\n=== SELECTED SEMANTIC CONTEXT ===")
 
     if not semantic_results:
-        print("Semantic search sonucu bulunamadı.")
+        print("Semantic context bulunamadı.")
 
     for index, result in enumerate(
         semantic_results,
@@ -254,12 +265,6 @@ def main():
             f"{index}. {result['chunk_id']} "
             f"(similarity={result['similarity']:.4f})"
         )
-
-    print("\n=== PRIMARY METRIC ===")
-    print(primary_metric or "Seçilemedi")
-
-    print("\n=== RELEVANT RULE ===")
-    print(relevant_rule or "Seçilemedi")
 
     print("\n=== DEPENDENCY ENRICHMENT ===")
 
@@ -272,10 +277,6 @@ def main():
     ):
         print(f"{index}. {result['chunk_id']}")
 
-    print("\n=== SUMMARY ===")
-    print(f"Semantic results: {len(semantic_results)}")
-    print(f"Dependency results: {len(dependency_results)}")
-
     unique_ids = {
         result["chunk_id"]
         for result in (
@@ -283,6 +284,9 @@ def main():
         )
     }
 
+    print("\n=== SUMMARY ===")
+    print(f"Selected semantic chunks: {len(semantic_results)}")
+    print(f"Dependency chunks: {len(dependency_results)}")
     print(f"Total unique chunks: {len(unique_ids)}")
 
 

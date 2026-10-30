@@ -1,6 +1,6 @@
 id,question,recall_at_5,context_recall,context_precision,missing,extra
-Q01,Siparişlerin yüzde kaçı geç teslim edildi?,0.5,1.0,0.3333,[],"[""metric:delivered_product_revenue"", ""rule:date_filter"", ""rule:join_caveat"", ""rule:revenue_caveat""]"
-Q02,Teslim edilen siparişlerden ne kadar gelir elde ettik?,0.3333,1.0,0.4286,[],"[""metric:delivered_order_aov"", ""metric:late_delivery_rate"", ""rule:join_caveat"", ""rule:revenue_caveat""]"
-Q03,Sipariş başına ortalama gelir nedir?,0.5,1.0,0.5714,[],"[""metric:average_delivery_days"", ""metric:total_orders"", ""rule:revenue_caveat""]"
-Q04,Toplam kaç sipariş var?,1.0,1.0,0.4,[],"[""metric:average_delivery_days"", ""metric:delivered_order_aov"", ""rule:join_caveat""]"
-Q05,Sipariş ve ödeme tablolarını birleştirirken nelere dikkat etmeliyiz?,0.6667,1.0,0.4286,[],"[""metric:delivered_order_aov"", ""metric:delivered_product_revenue"", ""rule:revenue_caveat"", ""table:order_items""]"
+Q01,Siparişlerin yüzde kaçı geç teslim edildi?,0.5,1.0,1.0,[],[]
+Q02,Teslim edilen siparişlerden ne kadar gelir elde ettik?,0.3333,1.0,1.0,[],[]
+Q03,Sipariş başına ortalama gelir nedir?,0.25,1.0,1.0,[],[]
+Q04,Toplam kaç sipariş var?,0.5,1.0,1.0,[],[]
+Q05,Sipariş ve ödeme tablolarını birleştirirken nelere dikkat etmeliyiz?,0.3333,1.0,0.75,[],"[""table:order_items""]"
