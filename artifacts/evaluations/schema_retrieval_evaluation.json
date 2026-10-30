@@ -1,0 +1,283 @@
+{
+  "evaluation_date": "2026-10-30T12:31:21",
+  "top_k": 5,
+  "summary": {
+    "total_questions": 5,
+    "mean_recall_at_5": 0.6,
+    "mean_context_recall": 1.0,
+    "mean_context_precision": 0.4,
+    "full_context_recall_count": 5
+  },
+  "results": [
+    {
+      "id": "Q01",
+      "question": "Siparişlerin yüzde kaçı geç teslim edildi?",
+      "expected": [
+        "metric:late_delivery_rate",
+        "table:orders"
+      ],
+      "semantic_results": [
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.3276
+        },
+        {
+          "chunk_id": "rule:date_filter",
+          "similarity": 0.2884
+        },
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.255
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.2449
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.2048
+        }
+      ],
+      "dependency_results": [
+        "table:orders",
+        "table:order_items"
+      ],
+      "all_retrieved": [
+        "metric:late_delivery_rate",
+        "rule:date_filter",
+        "rule:revenue_caveat",
+        "rule:join_caveat",
+        "metric:delivered_product_revenue",
+        "table:orders",
+        "table:order_items"
+      ],
+      "recall_at_5": 0.5,
+      "context_recall": 1.0,
+      "context_precision": 0.2857,
+      "missing": [],
+      "extra": [
+        "metric:delivered_product_revenue",
+        "rule:date_filter",
+        "rule:join_caveat",
+        "rule:revenue_caveat",
+        "table:order_items"
+      ]
+    },
+    {
+      "id": "Q02",
+      "question": "Teslim edilen siparişlerden ne kadar gelir elde ettik?",
+      "expected": [
+        "metric:delivered_product_revenue",
+        "table:orders",
+        "table:order_items"
+      ],
+      "semantic_results": [
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.4128
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.3858
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.347
+        },
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.339
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.3323
+        }
+      ],
+      "dependency_results": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "all_retrieved": [
+        "rule:join_caveat",
+        "metric:delivered_product_revenue",
+        "metric:delivered_order_aov",
+        "rule:revenue_caveat",
+        "metric:late_delivery_rate",
+        "table:order_items",
+        "table:orders"
+      ],
+      "recall_at_5": 0.3333,
+      "context_recall": 1.0,
+      "context_precision": 0.4286,
+      "missing": [],
+      "extra": [
+        "metric:delivered_order_aov",
+        "metric:late_delivery_rate",
+        "rule:join_caveat",
+        "rule:revenue_caveat"
+      ]
+    },
+    {
+      "id": "Q03",
+      "question": "Sipariş başına ortalama gelir nedir?",
+      "expected": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "table:orders",
+        "table:order_items"
+      ],
+      "semantic_results": [
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.2585
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.202
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.1959
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.1918
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.1443
+        }
+      ],
+      "dependency_results": [
+        "table:orders",
+        "table:order_items"
+      ],
+      "all_retrieved": [
+        "rule:revenue_caveat",
+        "metric:average_delivery_days",
+        "metric:delivered_product_revenue",
+        "metric:delivered_order_aov",
+        "metric:total_orders",
+        "table:orders",
+        "table:order_items"
+      ],
+      "recall_at_5": 0.5,
+      "context_recall": 1.0,
+      "context_precision": 0.5714,
+      "missing": [],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:total_orders",
+        "rule:revenue_caveat"
+      ]
+    },
+    {
+      "id": "Q04",
+      "question": "Toplam kaç sipariş var?",
+      "expected": [
+        "metric:total_orders",
+        "table:orders"
+      ],
+      "semantic_results": [
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.4501
+        },
+        {
+          "chunk_id": "table:orders",
+          "similarity": 0.4411
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.4311
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.4251
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.4186
+        }
+      ],
+      "dependency_results": [
+        "metric:delivered_product_revenue",
+        "table:order_items"
+      ],
+      "all_retrieved": [
+        "metric:total_orders",
+        "table:orders",
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "rule:join_caveat",
+        "metric:delivered_product_revenue",
+        "table:order_items"
+      ],
+      "recall_at_5": 1.0,
+      "context_recall": 1.0,
+      "context_precision": 0.2857,
+      "missing": [],
+      "extra": [
+        "metric:average_delivery_days",
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "rule:join_caveat",
+        "table:order_items"
+      ]
+    },
+    {
+      "id": "Q05",
+      "question": "Sipariş ve ödeme tablolarını birleştirirken nelere dikkat etmeliyiz?",
+      "expected": [
+        "rule:join_caveat",
+        "table:orders",
+        "table:order_payments"
+      ],
+      "semantic_results": [
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.4309
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.4143
+        },
+        {
+          "chunk_id": "table:order_payments",
+          "similarity": 0.2921
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.2501
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.2451
+        }
+      ],
+      "dependency_results": [
+        "table:order_items",
+        "table:orders"
+      ],
+      "all_retrieved": [
+        "rule:revenue_caveat",
+        "rule:join_caveat",
+        "table:order_payments",
+        "metric:delivered_product_revenue",
+        "metric:delivered_order_aov",
+        "table:order_items",
+        "table:orders"
+      ],
+      "recall_at_5": 0.6667,
+      "context_recall": 1.0,
+      "context_precision": 0.4286,
+      "missing": [],
+      "extra": [
+        "metric:delivered_order_aov",
+        "metric:delivered_product_revenue",
+        "rule:revenue_caveat",
+        "table:order_items"
+      ]
+    }
+  ]
+}
