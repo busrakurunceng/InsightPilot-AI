@@ -1,9 +1,9 @@
 {
-  "evaluation_date": "2026-10-30T13:06:46",
+  "evaluation_date": "2026-10-30T13:19:04",
   "top_k": 5,
   "summary": {
     "total_questions": 5,
-    "mean_recall_at_5": 0.3833,
+    "mean_raw_recall_at_5": 0.6,
     "mean_context_recall": 1.0,
     "mean_context_precision": 0.95,
     "full_context_recall_count": 5
@@ -16,20 +16,39 @@
         "metric:late_delivery_rate",
         "table:orders"
       ],
-      "semantic_results": [
+      "raw_results": [
         {
           "chunk_id": "metric:late_delivery_rate",
           "similarity": 0.3276
+        },
+        {
+          "chunk_id": "rule:date_filter",
+          "similarity": 0.2884
+        },
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.255
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.2449
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.2048
         }
+      ],
+      "selected_results": [
+        "metric:late_delivery_rate"
       ],
       "dependency_results": [
         "table:orders"
       ],
-      "all_retrieved": [
+      "final_context": [
         "metric:late_delivery_rate",
         "table:orders"
       ],
-      "recall_at_5": 0.5,
+      "raw_recall_at_5": 0.5,
       "context_recall": 1.0,
       "context_precision": 1.0,
       "missing": [],
@@ -43,22 +62,41 @@
         "table:orders",
         "table:order_items"
       ],
-      "semantic_results": [
+      "raw_results": [
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.4128
+        },
         {
           "chunk_id": "metric:delivered_product_revenue",
           "similarity": 0.3858
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.347
+        },
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.339
+        },
+        {
+          "chunk_id": "metric:late_delivery_rate",
+          "similarity": 0.3323
         }
+      ],
+      "selected_results": [
+        "metric:delivered_product_revenue"
       ],
       "dependency_results": [
         "table:order_items",
         "table:orders"
       ],
-      "all_retrieved": [
+      "final_context": [
         "metric:delivered_product_revenue",
         "table:order_items",
         "table:orders"
       ],
-      "recall_at_5": 0.3333,
+      "raw_recall_at_5": 0.3333,
       "context_recall": 1.0,
       "context_precision": 1.0,
       "missing": [],
@@ -73,24 +111,43 @@
         "table:orders",
         "table:order_items"
       ],
-      "semantic_results": [
+      "raw_results": [
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.2585
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.202
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.1959
+        },
         {
           "chunk_id": "metric:delivered_order_aov",
           "similarity": 0.1918
+        },
+        {
+          "chunk_id": "metric:total_orders",
+          "similarity": 0.1443
         }
+      ],
+      "selected_results": [
+        "metric:delivered_order_aov"
       ],
       "dependency_results": [
         "metric:delivered_product_revenue",
         "table:order_items",
         "table:orders"
       ],
-      "all_retrieved": [
+      "final_context": [
         "metric:delivered_order_aov",
         "metric:delivered_product_revenue",
         "table:order_items",
         "table:orders"
       ],
-      "recall_at_5": 0.25,
+      "raw_recall_at_5": 0.5,
       "context_recall": 1.0,
       "context_precision": 1.0,
       "missing": [],
@@ -103,20 +160,39 @@
         "metric:total_orders",
         "table:orders"
       ],
-      "semantic_results": [
+      "raw_results": [
         {
           "chunk_id": "metric:total_orders",
           "similarity": 0.4501
+        },
+        {
+          "chunk_id": "table:orders",
+          "similarity": 0.4411
+        },
+        {
+          "chunk_id": "metric:average_delivery_days",
+          "similarity": 0.4311
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.4251
+        },
+        {
+          "chunk_id": "rule:join_caveat",
+          "similarity": 0.4186
         }
+      ],
+      "selected_results": [
+        "metric:total_orders"
       ],
       "dependency_results": [
         "table:orders"
       ],
-      "all_retrieved": [
+      "final_context": [
         "metric:total_orders",
         "table:orders"
       ],
-      "recall_at_5": 0.5,
+      "raw_recall_at_5": 1.0,
       "context_recall": 1.0,
       "context_precision": 1.0,
       "missing": [],
@@ -130,24 +206,43 @@
         "table:orders",
         "table:order_payments"
       ],
-      "semantic_results": [
+      "raw_results": [
+        {
+          "chunk_id": "rule:revenue_caveat",
+          "similarity": 0.4309
+        },
         {
           "chunk_id": "rule:join_caveat",
           "similarity": 0.4143
+        },
+        {
+          "chunk_id": "table:order_payments",
+          "similarity": 0.2921
+        },
+        {
+          "chunk_id": "metric:delivered_product_revenue",
+          "similarity": 0.2501
+        },
+        {
+          "chunk_id": "metric:delivered_order_aov",
+          "similarity": 0.2451
         }
+      ],
+      "selected_results": [
+        "rule:join_caveat"
       ],
       "dependency_results": [
         "table:orders",
         "table:order_items",
         "table:order_payments"
       ],
-      "all_retrieved": [
+      "final_context": [
         "rule:join_caveat",
         "table:orders",
         "table:order_items",
         "table:order_payments"
       ],
-      "recall_at_5": 0.3333,
+      "raw_recall_at_5": 0.6667,
       "context_recall": 1.0,
       "context_precision": 0.75,
       "missing": [],

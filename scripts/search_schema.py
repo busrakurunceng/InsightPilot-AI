@@ -33,7 +33,12 @@ MODEL_NAME = (
 )
 
 
-def search_schema(question: str, top_k: int = 5):
+def retrieve_raw_schema(question: str, top_k: int = 5):
+    """
+    PostgreSQL pgvector üzerinden ham semantic sonuçları getirir.
+
+    Bu fonksiyon context filtering uygulamaz.
+    """
     if not question.strip():
         raise ValueError("Soru boş olamaz.")
 
@@ -85,11 +90,7 @@ def search_schema(question: str, top_k: int = 5):
                 },
             ).mappings().all()
 
-        return enrich_context(
-            rows,
-            engine,
-            question=question,
-        )
+        return [dict(row) for row in rows]
 
     finally:
         engine.dispose()
@@ -100,11 +101,10 @@ def enrich_context(results, engine, question=None):
     Semantic sonuçları seçer ve gerekli bağımlılıkları ekler.
 
     question=None:
-        Eski davranış korunur.
+        Önceki davranış korunur.
 
     question verildiğinde:
-        1. Context selection
-        2. Metric/rule dependency enrichment
+        Context selection ve dependency enrichment uygulanır.
     """
     semantics = load_semantics()
 
@@ -154,7 +154,6 @@ def enrich_context(results, engine, question=None):
             row["chunk_id"] == selected_rule
             for row in semantic_results
         ):
-            # İlişki sorularında rule selection öncelikli.
             selected_metrics = []
         else:
             selected_rule = None
@@ -236,6 +235,56 @@ def enrich_context(results, engine, question=None):
     return semantic_results, dependency_results
 
 
+def search_schema_detailed(question: str, top_k: int = 5):
+    """
+    Ham retrieval, seçilmiş context ve bağımlılıkları döndürür.
+
+    Tek embedding araması yapılır.
+    """
+    raw_results = retrieve_raw_schema(
+        question,
+        top_k=top_k,
+    )
+
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        raise ValueError("DATABASE_URL bulunamadı.")
+
+    engine = create_engine(database_url)
+
+    try:
+        selected_results, dependency_results = enrich_context(
+            raw_results,
+            engine,
+            question=question,
+        )
+
+    finally:
+        engine.dispose()
+
+    return {
+        "raw_results": raw_results,
+        "selected_results": selected_results,
+        "dependency_results": dependency_results,
+    }
+
+
+def search_schema(question: str, top_k: int = 5):
+    """
+    Mevcut iki değerli API korunur.
+    """
+    result = search_schema_detailed(
+        question,
+        top_k=top_k,
+    )
+
+    return (
+        result["selected_results"],
+        result["dependency_results"],
+    )
+
+
 def main():
     if len(sys.argv) < 2:
         print(
@@ -245,49 +294,45 @@ def main():
 
     question = " ".join(sys.argv[1:])
 
+    result = search_schema_detailed(question)
+
     print(f"\nSoru: {question}")
     print("-" * 60)
 
-    semantic_results, dependency_results = search_schema(
-        question
-    )
+    for title, key in [
+        ("RAW SEMANTIC RESULTS", "raw_results"),
+        ("SELECTED CONTEXT", "selected_results"),
+        ("DEPENDENCY ENRICHMENT", "dependency_results"),
+    ]:
+        print(f"\n=== {title} ===")
 
-    print("\n=== SELECTED SEMANTIC CONTEXT ===")
+        rows = result[key]
 
-    if not semantic_results:
-        print("Semantic context bulunamadı.")
+        if not rows:
+            print("Sonuç bulunmadı.")
 
-    for index, result in enumerate(
-        semantic_results,
-        start=1,
-    ):
-        print(
-            f"{index}. {result['chunk_id']} "
-            f"(similarity={result['similarity']:.4f})"
-        )
+        for index, row in enumerate(rows, start=1):
+            similarity = row.get("similarity")
 
-    print("\n=== DEPENDENCY ENRICHMENT ===")
+            if similarity is None:
+                print(f"{index}. {row['chunk_id']}")
+            else:
+                print(
+                    f"{index}. {row['chunk_id']} "
+                    f"(similarity={float(similarity):.4f})"
+                )
 
-    if not dependency_results:
-        print("Ek bağımlılık bulunmadı.")
-
-    for index, result in enumerate(
-        dependency_results,
-        start=1,
-    ):
-        print(f"{index}. {result['chunk_id']}")
-
-    unique_ids = {
-        result["chunk_id"]
-        for result in (
-            semantic_results + dependency_results
+    final_ids = {
+        row["chunk_id"]
+        for row in (
+            result["selected_results"]
+            + result["dependency_results"]
         )
     }
 
     print("\n=== SUMMARY ===")
-    print(f"Selected semantic chunks: {len(semantic_results)}")
-    print(f"Dependency chunks: {len(dependency_results)}")
-    print(f"Total unique chunks: {len(unique_ids)}")
+    print(f"Raw chunks: {len(result['raw_results'])}")
+    print(f"Final unique chunks: {len(final_ids)}")
 
 
 if __name__ == "__main__":
