@@ -542,7 +542,33 @@ Module 2 delivers schema/metric/rule retrieval and dependency-enriched context f
 - No database query execution is performed.
 - Model outputs require validation before use.
 
-**Next:** Step 3.4 — SQL Validation and Safety.
+
+### Step 3.4: SQL Validation and Safety
+**Status:** Completed (initial application-level validation)
+
+- Implemented `app/backend/sql_validator.py` using SQLGlot.
+- Added PostgreSQL SQL parsing and single-statement validation.
+- Restricted accepted queries to SELECT statements.
+- Rejected data-modifying operations and locking clauses.
+- Introduced an explicit SQL function allowlist.
+- Implemented physical table allowlist validation.
+- Added basic CTE handling and alias-shadowing protection.
+- Added tests for joins, aggregations, CTEs, subqueries,
+  unauthorized tables, UNION queries, and dangerous functions.
+- No generated SQL is executed during validation.
+
+**Validation results:**
+- SQL Validator: 41 passed.
+- Full regression suite: pending final verification.
+
+**Known limitations:**
+- SQLGlot validation does not guarantee database-level safety.
+- CTE scope resolution is not fully comprehensive.
+- Column existence and permissions are not yet validated.
+- Read-only database credentials and execution limits
+  have not yet been implemented.
+
+**Next:** Step 3.5 — Read-Only SQL Execution.
 
 ## Next Steps
 

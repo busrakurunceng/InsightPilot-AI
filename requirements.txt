@@ -18,5 +18,7 @@ pytest>=9,<10
 
 PyYAML>=6,<7
 
+sqlglot==30.27.0
+
 
 sentence-transformers>=5,<6
