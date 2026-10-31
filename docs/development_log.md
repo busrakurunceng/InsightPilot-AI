@@ -6,7 +6,7 @@
 **Dataset:** Brazilian E-Commerce Public Dataset by Olist  
 **Database:** PostgreSQL 18  
 **Development Environment:** Python 3.11, VS Code, Windows, pgAdmin  
-**Current Phase:** Module 3 — Text-to-SQL Engine (Step 3.1 completed)
+**Current Phase:** Module 3 — Text-to-SQL Engine (Step 3.2 completed)
 
 ### Project Objective
 
@@ -480,7 +480,39 @@ Module 2 delivers schema/metric/rule retrieval and dependency-enriched context f
 - `scripts/test_llm_connection.py`
 - `tests/test_llm_client.py`
 
-**Next:** Step 3.2 — Integrate Schema RAG context into SQL generation prompts.
+
+### Step 3.2: Schema RAG and SQL Prompt Integration
+
+**Status:** Completed
+
+- Implemented `app/backend/sql_prompt_builder.py`.
+- Integrated existing Schema RAG outputs with the local Ollama client.
+- Added system instructions for PostgreSQL SQL generation.
+- Included selected semantic chunks and dependency-enriched context.
+- Preserved business semantics and removed duplicate chunks.
+- Added handling for empty questions and missing schema context.
+- Implemented `scripts/test_sql_prompt.py` for live integration testing.
+- Added six automated tests in `tests/test_sql_prompt_builder.py`.
+
+**Integration validation:**
+- Question: "Toplam kaç sipariş var?"
+- Selected context: `metric:total_orders`
+- Dependency context: `table:orders`
+- Generated SQL: `SELECT COUNT(*) FROM orders`
+- Result: Correct SQL generation; execution not performed.
+
+**Test results:**
+- SQL Prompt Builder: 6 passed.
+- Full regression suite: 84 passed, 2 skipped.
+
+**Known limitations:**
+- SQL generation has been verified with one simple question.
+- Complex JOINs, aggregations, and business filters require evaluation.
+- Prompt instructions alone do not guarantee SQL safety.
+- Generated SQL is not yet validated or executed.
+
+**Next:** Step 3.3 — Text-to-SQL Generation Engine.
+
 
 ## Next Steps
 
