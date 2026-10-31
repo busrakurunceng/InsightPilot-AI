@@ -6,7 +6,7 @@
 **Dataset:** Brazilian E-Commerce Public Dataset by Olist  
 **Database:** PostgreSQL 18  
 **Development Environment:** Python 3.11, VS Code, Windows, pgAdmin  
-**Current Phase:** Module 3 — Text-to-SQL Engine (Step 3.2 completed)
+**Current Phase:** Module 3 — Text-to-SQL Engine (Step 3.3 completed)
 
 ### Project Objective
 
@@ -511,8 +511,38 @@ Module 2 delivers schema/metric/rule retrieval and dependency-enriched context f
 - Prompt instructions alone do not guarantee SQL safety.
 - Generated SQL is not yet validated or executed.
 
-**Next:** Step 3.3 — Text-to-SQL Generation Engine.
 
+### Step 3.3: Text-to-SQL Generation Engine
+
+**Status:** Completed
+
+- Implemented `app/backend/sql_generator.py`.
+- Introduced reusable `SQLGenerator` service.
+- Integrated Schema RAG, SQL Prompt Builder, and Ollama.
+- Added configurable retrieval `top_k` and injectable LLM client.
+- Introduced structured `SQLGenerationResult` containing generated SQL, model name, and retrieved context identifiers.
+- Added `scripts/test_sql_generator.py` for live integration testing.
+- Added six unit tests covering successful generation, retrieval configuration, invalid inputs, missing context, and empty model responses.
+
+**Integration validation:**
+- Question: "Toplam kaç sipariş var?"
+- Selected metric: `metric:total_orders`
+- Dependency: `table:orders`
+- Model: `qwen2.5-coder:7b-instruct`
+- Generated SQL: `SELECT COUNT(*) FROM orders`
+- Result: Successful generation without SQL execution.
+
+**Test results:**
+- SQL Generator: 6 passed.
+- Full regression suite: 90 passed, 2 skipped.
+
+**Known limitations:**
+- Complex SQL generation has not yet been evaluated.
+- Generated SQL is not validated for syntax or safety.
+- No database query execution is performed.
+- Model outputs require validation before use.
+
+**Next:** Step 3.4 — SQL Validation and Safety.
 
 ## Next Steps
 
