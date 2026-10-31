@@ -6,7 +6,7 @@
 **Dataset:** Brazilian E-Commerce Public Dataset by Olist  
 **Database:** PostgreSQL 18  
 **Development Environment:** Python 3.11, VS Code, Windows, pgAdmin  
-**Current Phase:** Module 2 — Schema RAG & Semantic Retrieval (MVP implementation and evaluation complete; release tag pending)
+**Current Phase:** Module 3 — Text-to-SQL Engine (Step 3.1 completed)
 
 ### Project Objective
 
@@ -437,6 +437,50 @@ Module 2 delivers schema/metric/rule retrieval and dependency-enriched context f
 | Dependency-aware enrichment | Retrieve tables required by matched metrics even when vector search omits them |
 
 ---
+
+## Module 3 — Text-to-SQL Engine
+
+### Step 3.1: Local LLM Setup and Python Integration
+
+**Status:** Completed
+
+- Installed and verified Ollama v0.40.13 on Windows.
+- Downloaded `qwen2.5-coder:7b-instruct` (4.7 GB).
+- Verified basic PostgreSQL SQL generation using the Ollama CLI.
+- Confirmed local HTTP API connectivity through `/api/chat`.
+- Implemented `app/backend/llm_client.py` as a standalone Ollama HTTP client.
+- Added configurable model, endpoint, timeout, and temperature settings.
+- Implemented structured LLM responses and explicit error handling.
+- Added `scripts/test_llm_connection.py` for live connection validation.
+- Added `tests/test_llm_client.py` with mocked HTTP unit tests.
+- Kept LLM communication separate from Schema RAG, SQL generation, and database execution.
+
+**Observed runtime configuration:**
+- Model: `qwen2.5-coder:7b-instruct`
+- Context window: 4096 tokens
+- Processor allocation: 82% GPU / 18% CPU (observed)
+- Local API endpoint: `http://127.0.0.1:11434`
+
+**Validation:**
+- LLM client unit tests: 8 passed.
+- Full regression suite: 78 passed, 2 skipped.
+- Live Python-to-Ollama connection: PASSED.
+- Expected response: `CONNECTION_OK`.
+- Observed wall time: 7.07 seconds.
+- Ollama total duration: 7.05 seconds.
+- Generated tokens: 4.
+
+**Limitations:**
+- The connection test does not measure Text-to-SQL accuracy.
+- Model latency has not yet been benchmarked on representative SQL questions.
+- Schema RAG integration and SQL validation are not implemented in this step.
+
+**Artifacts:**
+- `app/backend/llm_client.py`
+- `scripts/test_llm_connection.py`
+- `tests/test_llm_client.py`
+
+**Next:** Step 3.2 — Integrate Schema RAG context into SQL generation prompts.
 
 ## Next Steps
 
