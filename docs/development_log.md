@@ -568,7 +568,48 @@ Module 2 delivers schema/metric/rule retrieval and dependency-enriched context f
 - Read-only database credentials and execution limits
   have not yet been implemented.
 
-**Next:** Step 3.5 — Read-Only SQL Execution.
+
+### Step 3.5: Read-Only SQL Execution
+
+**Status:** Completed
+
+**Implementation:**
+- Added `app/backend/sql_executor.py`.
+- Created a dedicated PostgreSQL read-only role: `insightpilot_reader`.
+- Configured separate database credentials through environment variables.
+- Implemented SQL execution using SQLAlchemy and psycopg.
+- Integrated SQLGlot validation before query execution.
+- Enforced read-only database transactions.
+- Added configurable PostgreSQL statement timeout.
+- Added configurable result row limits and truncation detection.
+- Implemented structured execution results and error handling.
+- Preserved existing database connection modules.
+
+**Testing:**
+- SQL Executor unit tests: 12 passed.
+- Full regression suite: 143 passed, 2 skipped.
+- Live PostgreSQL SELECT test: 99,441 orders.
+- Row limit test: 10 rows returned, truncated=True.
+- Read-only transaction test: INSERT rejected.
+- PostgreSQL timeout test: long-running query cancelled.
+- Added pytest.ini to restrict automatic test discovery to tests/.
+
+**Security:**
+- No fallback to administrator credentials.
+- Dedicated database role with restricted permissions.
+- SQL validation before execution.
+- Read-only transactions and database-level permission checks.
+- Statement timeout and bounded result retrieval.
+
+**Known limitations:**
+- The row limit restricts returned rows, not database computation cost.
+- The tested timeout mechanism does not independently prove
+  every executor timeout configuration.
+- SQL validation and database permissions remain complementary
+  security controls.
+
+**Next:** Step 3.6 - End-to-End Text-to-SQL Integration.
+
 
 ## Next Steps
 
