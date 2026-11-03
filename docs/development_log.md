@@ -611,6 +611,53 @@ Module 2 delivers schema/metric/rule retrieval and dependency-enriched context f
 **Next:** Step 3.6 - End-to-End Text-to-SQL Integration.
 
 
+### Step 3.6: End-to-End Text-to-SQL Integration
+
+**Status:** Completed
+
+**Implementation:**
+- Added `app/backend/text_to_sql_service.py`.
+- Integrated Schema RAG, Ollama SQL generation,
+  SQLGlot validation, and read-only SQL execution.
+- Added a fixed allowlist for the nine Olist tables.
+- Added explicit handling for `INSUFFICIENT_CONTEXT`.
+- Added structured pipeline results containing SQL,
+  model, rows, columns, and retrieval metadata.
+- Added separate generation, validation, and execution
+  error categories.
+- Updated `app/backend/sql_generator.py` to normalize
+  single Markdown SQL code blocks.
+- Preserved rejection of malformed or multiple code blocks.
+
+**Testing:**
+- Text-to-SQL service unit tests: 18 passed.
+- Full regression suite before normalization tests:
+  161 passed, 2 skipped.
+- Live Ollama + PostgreSQL integration: passed.
+- Natural-language question:
+  "Toplam kaç sipariş var?"
+- Generated SQL:
+  `SELECT COUNT(*) AS total_orders FROM orders;`
+- Database result: 99,441 orders.
+- Result metadata: row_count=1, truncated=False.
+
+**Security:**
+- SQL is validated before execution.
+- Executor independently validates SQL.
+- Queries use the dedicated read-only database role.
+- Unsupported SQL is rejected before database execution.
+- Table permissions are not derived from LLM output.
+
+**Known limitations:**
+- Schema retrieval selected unrelated tables for a
+  simple order-count question.
+- Turkish character encoding needs separate verification.
+- A successful single-question integration test does not
+  establish general Text-to-SQL accuracy.
+
+**Next:** Step 3.7 - Text-to-SQL Evaluation and Error Analysis.
+
+
 ## Next Steps
 
 1. Confirm Module 2 documentation and benchmark outputs are committed, with a clean working tree.
