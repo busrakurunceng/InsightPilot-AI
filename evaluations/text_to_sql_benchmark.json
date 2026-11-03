@@ -1,0 +1,117 @@
+
+{
+  "benchmark_name": "InsightPilot Text-to-SQL Benchmark",
+  "version": "0.1.0",
+  "database": "olist",
+  "language": "tr",
+  "cases": [
+    {
+      "id": "SQL_001",
+      "category": "basic",
+      "difficulty": "easy",
+      "question": "Toplam kaç sipariş var?",
+      "reference_sql": "SELECT COUNT(*) AS total_orders FROM orders;",
+      "expected_tables": ["orders"],
+      "comparison": "scalar"
+    },
+    {
+      "id": "SQL_002",
+      "category": "basic",
+      "difficulty": "easy",
+      "question": "Toplam kaç müşteri kaydı var?",
+      "reference_sql": "SELECT COUNT(*) AS total_customers FROM customers;",
+      "expected_tables": ["customers"],
+      "comparison": "scalar"
+    },
+    {
+      "id": "SQL_003",
+      "category": "basic",
+      "difficulty": "easy",
+      "question": "Toplam kaç ürün var?",
+      "reference_sql": "SELECT COUNT(*) AS total_products FROM products;",
+      "expected_tables": ["products"],
+      "comparison": "scalar"
+    },
+    {
+      "id": "SQL_004",
+      "category": "filter",
+      "difficulty": "easy",
+      "question": "Teslim edilmiş kaç sipariş var?",
+      "reference_sql": "SELECT COUNT(*) AS delivered_orders FROM orders WHERE order_status = 'delivered';",
+      "expected_tables": ["orders"],
+      "comparison": "scalar"
+    },
+    {
+      "id": "SQL_005",
+      "category": "filter",
+      "difficulty": "easy",
+      "question": "İptal edilmiş kaç sipariş var?",
+      "reference_sql": "SELECT COUNT(*) AS canceled_orders FROM orders WHERE order_status = 'canceled';",
+      "expected_tables": ["orders"],
+      "comparison": "scalar"
+    },
+    {
+      "id": "SQL_006",
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "Siparişlerin durumlarına göre dağılımı nedir?",
+      "reference_sql": "SELECT order_status, COUNT(*) AS order_count FROM orders GROUP BY order_status ORDER BY order_status;",
+      "expected_tables": ["orders"],
+      "comparison": "unordered_rows"
+    },
+    {
+      "id": "SQL_007",
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "Müşterilerin eyaletlere göre dağılımı nedir?",
+      "reference_sql": "SELECT customer_state, COUNT(*) AS customer_count FROM customers GROUP BY customer_state ORDER BY customer_state;",
+      "expected_tables": ["customers"],
+      "comparison": "unordered_rows"
+    },
+    {
+      "id": "SQL_008",
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "Ödeme kayıtlarındaki toplam ödeme tutarı nedir?",
+      "reference_sql": "SELECT SUM(payment_value) AS total_payment_value FROM order_payments;",
+      "expected_tables": ["order_payments"],
+      "comparison": "scalar"
+    },
+    {
+      "id": "SQL_009",
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "Ödeme kayıtlarının ortalama tutarı nedir?",
+      "reference_sql": "SELECT AVG(payment_value) AS average_payment_value FROM order_payments;",
+      "expected_tables": ["order_payments"],
+      "comparison": "scalar"
+    },
+    {
+      "id": "SQL_010",
+      "category": "join",
+      "difficulty": "medium",
+      "question": "São Paulo eyaletindeki müşterilerin verdiği toplam sipariş sayısı kaçtır?",
+      "reference_sql": "SELECT COUNT(*) AS order_count FROM orders o JOIN customers c ON o.customer_id = c.customer_id WHERE c.customer_state = 'SP';",
+      "expected_tables": ["orders", "customers"],
+      "comparison": "scalar"
+    },
+    {
+      "id": "SQL_011",
+      "category": "date",
+      "difficulty": "medium",
+      "question": "2018 yılında kaç sipariş verilmiş?",
+      "reference_sql": "SELECT COUNT(*) AS order_count FROM orders WHERE order_purchase_timestamp >= '2018-01-01' AND order_purchase_timestamp < '2019-01-01';",
+      "expected_tables": ["orders"],
+      "comparison": "scalar"
+    },
+    {
+      "id": "SQL_012",
+      "category": "join",
+      "difficulty": "hard",
+      "question": "Her eyaletteki müşterilerin verdiği sipariş sayısını göster.",
+      "reference_sql": "SELECT c.customer_state, COUNT(*) AS order_count FROM orders o JOIN customers c ON o.customer_id = c.customer_id GROUP BY c.customer_state ORDER BY c.customer_state;",
+      "expected_tables": ["orders", "customers"],
+      "comparison": "unordered_rows"
+    }
+  ]
+}

@@ -658,6 +658,46 @@ Module 2 delivers schema/metric/rule retrieval and dependency-enriched context f
 **Next:** Step 3.7 - Text-to-SQL Evaluation and Error Analysis.
 
 
+### Step 3.7.1: Text-to-SQL Benchmark Design and Validation
+
+**Status:** Completed
+
+**Implementation:**
+- Created `evaluations/text_to_sql_benchmark.json`.
+- Designed 12 Turkish natural-language questions.
+- Included basic queries, filtering, aggregation,
+  JOIN operations, and date-based analysis.
+- Defined reference SQL, expected tables, difficulty,
+  and comparison type for each benchmark case.
+- Created `scripts/validate_benchmark.py`.
+- Validated reference SQL against the PostgreSQL
+  database using the read-only SQL executor.
+
+**SQL Validator Fix:**
+- Identified incorrect rejection of SQL AND expressions.
+- Updated `app/backend/sql_validator.py` to recognize
+  AND and OR as logical operators.
+- Preserved existing SQL function restrictions.
+- Added `tests/test_sql_logical_operators.py`.
+- Verified that dangerous functions and unauthorized
+  tables remain rejected within logical expressions.
+
+**Validation Results:**
+- Benchmark JSON: 12 valid cases with unique IDs.
+- Reference SQL execution: 12 passed, 0 failed.
+- Logical operator regression tests: 7 passed.
+- Full regression suite: 183 passed, 2 skipped.
+
+**Limitations:**
+- Successful execution does not guarantee semantic
+  correctness of the reference queries.
+- Benchmark coverage is currently limited to 12 cases.
+- Model-generated SQL accuracy has not yet been measured.
+- Business metric definitions require further review.
+
+**Next:** Step 3.7.2 - Automated Text-to-SQL Evaluation Runner.
+
+
 ## Next Steps
 
 1. Confirm Module 2 documentation and benchmark outputs are committed, with a clean working tree.

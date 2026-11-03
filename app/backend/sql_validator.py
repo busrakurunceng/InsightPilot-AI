@@ -39,6 +39,14 @@ ALLOWED_FUNCTIONS = (
     exp.Coalesce,
 )
 
+# SQLGlot can represent logical operators within
+# the exp.Func class hierarchy. These operators
+# are not callable SQL functions.
+ALLOWED_LOGICAL_OPERATORS = (
+    exp.And,
+    exp.Or,
+)
+
 
 def validate_sql(
     sql: str,
@@ -52,7 +60,9 @@ def validate_sql(
     """
 
     if not isinstance(sql, str) or not sql.strip():
-        raise SQLValidationError("SQL must not be empty.")
+        raise SQLValidationError(
+            "SQL must not be empty."
+        )
 
     if not allowed_tables:
         raise SQLValidationError(
@@ -99,16 +109,25 @@ def validate_sql(
                 "Forbidden SQL operation detected."
             )
 
-        if isinstance(node, exp.Func):
-            if type(node) not in ALLOWED_FUNCTIONS:
-                raise SQLValidationError(
-                    f"SQL function not allowed: {node.sql_name()}"
-                )
-
         if isinstance(node, exp.Lock):
             raise SQLValidationError(
                 "Locking clauses are not allowed."
             )
+
+        if isinstance(node, exp.Func):
+            # Logical operators are SQL expressions,
+            # not user-callable SQL functions.
+            if isinstance(
+                node,
+                ALLOWED_LOGICAL_OPERATORS,
+            ):
+                continue
+
+            if type(node) not in ALLOWED_FUNCTIONS:
+                raise SQLValidationError(
+                    f"SQL function not allowed: "
+                    f"{node.sql_name()}"
+                )
 
     # Collect CTE aliases.
     cte_names = {
@@ -143,7 +162,8 @@ def validate_sql(
         if table_name in cte_names:
             if table.db:
                 raise SQLValidationError(
-                    "Schema-qualified CTE references are not allowed."
+                    "Schema-qualified CTE references "
+                    "are not allowed."
                 )
             continue
 
@@ -162,5 +182,7 @@ def validate_sql(
 
     return SQLValidationResult(
         sql=sql.strip(),
-        referenced_tables=tuple(sorted(referenced_tables)),
+        referenced_tables=tuple(
+            sorted(referenced_tables)
+        ),
     )
