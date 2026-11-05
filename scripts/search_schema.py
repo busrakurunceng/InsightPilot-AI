@@ -13,7 +13,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+
 from app.backend.context_selector import select_context
+from app.backend.question_table_relevance import infer_question_tables
 from app.backend.schema_dependencies import (
     load_semantics,
     metric_dependencies,
@@ -104,7 +106,10 @@ def enrich_context(results, engine, question=None):
         Önceki davranış korunur.
 
     question verildiğinde:
-        Context selection ve dependency enrichment uygulanır.
+        - Context selection uygulanır.
+        - Metric dependency enrichment uygulanır.
+        - Rule dependency enrichment uygulanır.
+        - Question-aware table enrichment uygulanır.
     """
     semantics = load_semantics()
 
@@ -176,6 +181,7 @@ def enrich_context(results, engine, question=None):
         seen_dependencies.add(chunk_id)
         dependency_ids.append(chunk_id)
 
+    # 1. Metric dependencies
     for metric_id in selected_metrics:
         metric_name = metric_id.removeprefix("metric:")
 
@@ -187,9 +193,28 @@ def enrich_context(results, engine, question=None):
         for chunk_id in dependencies:
             add_dependency(chunk_id)
 
+    # 2. Rule dependencies
     if selected_rule is not None:
         for chunk_id in rule_dependencies(selected_rule):
             add_dependency(chunk_id)
+
+    # 3. Question-aware table enrichment
+    #
+    # Soruda açıkça belirtilen tablo kavramlarını korur.
+    # Örneğin:
+    # "Her eyaletteki müşterilerin verdiği sipariş sayısı"
+    # -> table:customers + table:orders
+    #
+    # Böylece bu tablolar semantic top_k sonuçlarında
+    # bulunmasa bile final context'e eklenebilir.
+    if question is not None:
+        known_tables = set(semantics["tables"])
+
+        for table_name in infer_question_tables(question):
+            if table_name not in known_tables:
+                continue
+
+            add_dependency(f"table:{table_name}")
 
     if not dependency_ids:
         return semantic_results, []
