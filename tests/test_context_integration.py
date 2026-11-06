@@ -137,7 +137,7 @@ def test_join_question_preserves_required_tables():
     }
 
 
-def test_unknown_intent_uses_fallback():
+def test_explicit_customer_intent_filters_irrelevant_tables():
     results = [
         make_result("table:customers", 0.52),
         make_result("table:orders", 0.31),
@@ -154,5 +154,5 @@ def test_unknown_intent_uses_fallback():
         ),
     )
 
-    assert semantic == results
+    assert semantic == [results[0]]
     assert dependencies == []

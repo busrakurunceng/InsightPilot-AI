@@ -72,7 +72,7 @@ def test_selects_join_rule_only():
     ] == ["rule:join_caveat"]
 
 
-def test_unknown_intent_keeps_semantic_results():
+def test_explicit_customer_intent_filters_irrelevant_tables():
     results = [
         make_result("table:customers", 0.52),
         make_result("table:orders", 0.31),
@@ -83,8 +83,20 @@ def test_unknown_intent_keeps_semantic_results():
         results,
     )
 
-    assert selected == results
+    assert selected == [results[0]]
 
+def test_unknown_intent_preserves_semantic_fallback():
+    results = [
+        make_result("table:customers", 0.52),
+        make_result("table:orders", 0.31),
+    ]
+
+    selected = select_context(
+        "Veri setinin genel yapısını açıkla.",
+        results,
+    )
+
+    assert selected == results
 
 def test_empty_results():
     assert select_context(
