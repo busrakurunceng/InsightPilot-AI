@@ -6,7 +6,7 @@
 **Dataset:** Brazilian E-Commerce Public Dataset by Olist  
 **Database:** PostgreSQL 18  
 **Development Environment:** Python 3.11, VS Code, Windows, pgAdmin  
-**Current Phase:** Module 3 — Text-to-SQL Engine (Step 3.3 completed)
+**Current Phase:** Module 3 — Text-to-SQL Evaluation and Semantic Validation (Step 3.7.3.6.1 completed)
 
 ### Project Objective
 
@@ -409,7 +409,7 @@ and prepare the initial Streamlit dashboard.
 
 ### Module 2 — MVP Closure
 
-**Implementation and evaluation status:** Complete. **Git release tag:** Pending creation/verification (`v0.2.0-schema-rag`).
+**Implementation and evaluation status:** Complete. **Git release tag:** `v0.2.0-schema-rag` (reported as created in the development workflow; verify locally with `git tag -l`).
 
 Module 2 delivers schema/metric/rule retrieval and dependency-enriched context for the next module. It does not implement LLM-based SQL generation, SQL execution, or an end-user conversational interface.
 
@@ -698,12 +698,102 @@ Module 2 delivers schema/metric/rule retrieval and dependency-enriched context f
 **Next:** Step 3.7.2 - Automated Text-to-SQL Evaluation Runner.
 
 
+### Step 3.7.2: Automated Text-to-SQL Evaluation Runner
+
+**Status:** Completed
+
+- Added `app/backend/result_comparator.py` to compare scalar, unordered-row and ordered-row results with numeric tolerance and duplicate-aware matching.
+- Added `app/backend/evaluation_runner.py` with per-case statuses, structured results, benchmark loading and report export.
+- Added `scripts/run_text_to_sql_evaluation.py` and tests for result comparison and evaluation orchestration.
+- Recorded an initial 12-case live baseline: **5/12 correct (41.67%)**, with six result mismatches and one execution error.
+- Recorded baseline evaluation artifact in Git (`b6be864`); evaluation implementation committed separately (`574f922`).
+
+**Limitation:** The benchmark is small; generated SQL and model output may vary between runs. Pipeline errors are not always accompanied by the attempted SQL in the report.
+
+### Step 3.7.3.1: Question-Aware Table Dependencies
+
+**Status:** Completed
+
+- Added `app/backend/question_table_relevance.py` to infer relevant Olist tables from normalized Turkish question terms.
+- Updated dependency enrichment so question-relevant tables can be included even when metric retrieval selects only the measure.
+- Verified seven live database checks and a full regression suite of **238 passed, 2 skipped**.
+- **Git commit:** `94c2536`.
+
+### Step 3.7.3.2: Context Precision Filtering
+
+**Status:** Completed
+
+- Refined `app/backend/context_selector.py` to prioritize a relevant metric or join rule and avoid sending unrelated retrieved chunks to the LLM.
+- Added `tests/test_context_precision.py` and adjusted existing context-selection expectations.
+- **Tests:** 248 passed, 2 skipped.
+- **Observed evaluation:** **9/12 correct (75%)**; remaining failures SQL_004, SQL_005 and SQL_012.
+- **Git commit:** `24765c5`.
+
+### Step 3.7.3.4: Business Semantics Grounding
+
+**Status:** Completed
+
+- Expanded `semantic/business_semantics.yaml` with exact `orders.order_status` values (`delivered`, `canceled`), status interpretation guidance and the `orders.customer_id` → `customers.customer_id` logical relationship.
+- Updated `app/backend/sql_prompt_builder.py` to include only relevant business table definitions and relationships alongside retrieved schema chunks.
+- Added `tests/test_sql_business_grounding.py` (seven tests).
+- **Tests:** 255 passed, 2 skipped.
+- **Observed evaluation:** **11/12 correct (91.67%)**. SQL_004 and SQL_005 were corrected; SQL_012 remained a result mismatch.
+- **Git commit:** `6b13a44`.
+
+### Step 3.7.3.5: SQL Planning Prompt Experiment
+
+**Status:** Experiment completed; accuracy improvement not demonstrated
+
+- Expanded the SQL system prompt with internal planning instructions for measure, dimensions, filters, tables, joins and aggregation.
+- Added `tests/test_sql_planning_prompt.py` (five tests).
+- **Tests:** 260 passed, 2 skipped.
+- **Live SQL_012 check:** Still generated `SELECT COUNT(*) AS total_orders FROM orders;` without the required state grouping.
+- **Important:** Passing prompt-structure tests does not establish better SQL generation accuracy. This prompt change was not included in the subsequent semantic-validator commit; verify its working-tree status before committing.
+
+### Step 3.7.3.6.1: Semantic SQL Grouping Validator Prototype
+
+**Status:** Completed and pushed; integration pending
+
+- Added `app/backend/semantic_sql_validator.py` with `SemanticValidationResult` and `validate_grouping_requirement(sql, required_dimension=None)`.
+- Uses SQLGlot to parse SQL and detect a missing `GROUP BY` or a missing required grouping column when the expected dimension is explicitly supplied.
+- Added `tests/test_semantic_sql_validator.py` with six passing tests.
+- **Full regression suite:** **266 passed, 2 skipped**, 12.64 seconds.
+- **Git commit:** `8fd89c6 feat: add initial semantic SQL grouping validator`, pushed to `origin/main`.
+
+**Limitations:** This is an isolated prototype, not part of `TextToSQLService` yet. It does not infer the required dimension from a question, verify join correctness, handle all alias/ordinal grouping cases or prove semantic correctness of a query. SQL_012 remains unresolved.
+
+### SQL_012 Investigation — Root-Cause Evidence
+
+**Question:** “Her eyaletteki müşterilerin verdiği sipariş sayısını göster.”
+
+**Expected analytical shape:** Count orders grouped by `customers.customer_state`, joining `orders.customer_id = customers.customer_id`.
+
+**Observed model output:**
+
+```sql
+SELECT COUNT(*) AS total_orders
+FROM orders;
+```
+
+- Unicode-escaped Turkish input normalized correctly to `her eyaletteki musterilerin verdigi siparis sayisini goster`.
+- Schema RAG selected `metric:total_orders` and added `table:orders`, `table:customers` dependencies.
+- The table chunks explicitly contain `orders.customer_id`, `customers.customer_id`, `customers.customer_state` and the physical foreign-key relationship.
+- The same incorrect SQL was generated after the structured planning prompt experiment.
+- A separate PowerShell here-string diagnostic corrupted literal Turkish characters into question marks before Python processed them. Unicode escapes avoided that diagnostic encoding issue; it does not explain the benchmark failure, where correct chunks were retrieved.
+
+**Conclusion:** Retrieval provides the required schema; the model fails to preserve the grouping dimension in SQL generation. The new semantic validator can flag this class of issue only when supplied an expected dimension. Automatic dimension inference, semantic checks and any bounded regeneration strategy remain future work.
+
+**Benchmark evidence:** The 91.67% figure is the last reported full 12-case live evaluation, not a new evaluation of the semantic validator. Existing report backups should be preserved before rerunning any report-writing command.
+
+---
+
 ## Next Steps
 
-1. Confirm Module 2 documentation and benchmark outputs are committed, with a clean working tree.
-2. Run `python -m pytest tests/ -q` as the final regression check.
-3. Create and push the annotated Module 2 tag `v0.2.0-schema-rag` after validation.
-4. Begin Module 3 — Text-to-SQL Engine, starting with a constrained, read-only SQL generation and validation flow.
+1. Implement Step 3.7.3.6.2: schema-grounded question-to-dimension mapping, with Turkish paraphrase tests and explicit no-grouping cases.
+2. Strengthen semantic validation for aliases, qualified columns, ordinal grouping, joins and false positives before integrating it into the service.
+3. Add bounded SQL regeneration only after validation and safety boundaries are defined; revalidate every regenerated query.
+4. Preserve existing evaluation artifacts **before** rerunning the benchmark; compare all 12 cases and record regressions as well as improvements.
+5. Keep `docs/development_log.md` and `docs/text_to_sql_evaluation.md` synchronized with tested milestones. Commit documentation in a separate, scoped Git commit.
 
 ## Development Principles
 
