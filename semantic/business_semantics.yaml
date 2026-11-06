@@ -1,3 +1,4 @@
+
 version: 1
 schema: public
 language: tr
@@ -6,27 +7,46 @@ tables:
   customers:
     description: Müşteri kayıtları ve müşterinin coğrafi bilgileri.
     grain: Her satır bir müşteri kaydıdır (customer_id).
+
   orders:
     description: Siparişlerin durumları ve sipariş, teslimat tarihleri.
     grain: Her satır bir sipariştir (order_id).
+    status_column: order_status
+    status_values:
+      delivered:
+        description: Teslim edilmiş sipariş.
+      canceled:
+        description: İptal edilmiş sipariş.
+    status_guidance:
+      - Siparişin iş durumu sorulduğunda orders.order_status kullanılır.
+      - Teslim edilmiş siparişler için order_status = 'delivered' kullanılır.
+      - İptal edilmiş siparişler için order_status = 'canceled' kullanılır.
+      - order_delivered_customer_date IS NOT NULL, delivered durumuyla eşdeğer kabul edilmez.
+
   order_items:
     description: Sipariş içindeki ürün kalemleri, satıcı ve ürün fiyatları.
     grain: Her satır bir sipariş kalemidir (order_id ve order_item_id).
+
   order_payments:
     description: Siparişler için ödeme kayıtları; bir sipariş birden fazla ödeme kaydına sahip olabilir.
     grain: Her satır bir ödeme kaydıdır.
+
   order_reviews:
     description: Siparişlere ilişkin müşteri değerlendirmeleri.
     grain: Her satır bir değerlendirme kaydıdır.
+
   products:
     description: Ürünlerin kategorileri ve özellikleri.
     grain: Her satır bir üründür (product_id).
+
   sellers:
     description: Satıcı kayıtları ve coğrafi bilgileri.
     grain: Her satır bir satıcıdır (seller_id).
+
   geolocation:
     description: Posta kodu önekleriyle ilişkili coğrafi koordinat kayıtları.
     grain: Posta kodu öneki benzersiz değildir; bir önekte birden çok satır bulunabilir.
+
   product_category_name_translation:
     description: Portekizce ürün kategorilerinin İngilizce karşılıkları.
     grain: Her satır bir kategori çevirisidir.
@@ -36,6 +56,10 @@ logical_relationships:
     right: product_category_name_translation.product_category_name
     description: Ürün kategorisinin İngilizce adını bulmak için kullanılabilir; fiziksel FK yoktur.
 
+  - left: orders.customer_id
+    right: customers.customer_id
+    description: Siparişleri müşterilerin coğrafi bilgileriyle ilişkilendirmek için kullanılır.
+
 metrics:
   total_orders:
     description: Seçilen satın alma tarihi aralığındaki tüm siparişlerin sayısı.
@@ -43,6 +67,7 @@ metrics:
     base_table: orders
     date_column: orders.order_purchase_timestamp
     status_filter: null
+
   delivered_product_revenue:
     description: Teslim edilmiş siparişlerdeki ürün kalemi fiyatlarının toplamı; kargo ücreti ve ödeme toplamları dahil değildir.
     expression: SUM(order_items.price)
@@ -52,12 +77,14 @@ metrics:
     status_filter: orders.order_status = 'delivered'
     date_column: orders.order_purchase_timestamp
     currency: BRL
+
   delivered_order_aov:
     description: Teslim edilmiş ürün içeren sipariş başına ortalama ürün satış geliri.
     numerator: delivered_product_revenue
     denominator: COUNT(DISTINCT orders.order_id) among delivered orders with items
     date_column: orders.order_purchase_timestamp
     currency: BRL
+
   average_delivery_days:
     description: Gerçek teslimat tarihi bulunan, teslim edilmiş siparişlerde satın almadan teslimata kadar geçen ortalama gün.
     base_table: orders
@@ -66,6 +93,7 @@ metrics:
     required_columns:
       - orders.order_purchase_timestamp
       - orders.order_delivered_customer_date
+
   late_delivery_rate:
     description: Gerçek teslimatı tahmini teslimat tarihinden sonra olan siparişlerin, karşılaştırılabilir teslim edilmiş siparişlere oranı.
     base_table: orders
