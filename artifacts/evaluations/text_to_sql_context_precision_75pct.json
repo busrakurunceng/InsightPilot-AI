@@ -1,0 +1,236 @@
+{
+  "benchmark_name": "InsightPilot Text-to-SQL Benchmark",
+  "benchmark_version": "0.1.0",
+  "evaluated_at": "2026-11-06T14:59:58.864295+00:00",
+  "total_cases": 12,
+  "correct_cases": 9,
+  "execution_accuracy": 0.75,
+  "status_counts": {
+    "correct": 9,
+    "result_mismatch": 3
+  },
+  "cases": [
+    {
+      "case_id": "SQL_001",
+      "question": "Toplam kaç sipariş var?",
+      "category": "basic",
+      "difficulty": "easy",
+      "status": "correct",
+      "matched": true,
+      "generated_sql": "SELECT COUNT(*) FROM orders",
+      "reference_row_count": 1,
+      "generated_row_count": 1,
+      "selected_chunk_ids": [
+        "metric:total_orders"
+      ],
+      "dependency_chunk_ids": [
+        "table:orders"
+      ],
+      "error_type": null,
+      "reason": "Results match."
+    },
+    {
+      "case_id": "SQL_002",
+      "question": "Toplam kaç müşteri kaydı var?",
+      "category": "basic",
+      "difficulty": "easy",
+      "status": "correct",
+      "matched": true,
+      "generated_sql": "SELECT COUNT(*) FROM customers",
+      "reference_row_count": 1,
+      "generated_row_count": 1,
+      "selected_chunk_ids": [
+        "table:customers"
+      ],
+      "dependency_chunk_ids": [],
+      "error_type": null,
+      "reason": "Results match."
+    },
+    {
+      "case_id": "SQL_003",
+      "question": "Toplam kaç ürün var?",
+      "category": "basic",
+      "difficulty": "easy",
+      "status": "correct",
+      "matched": true,
+      "generated_sql": "SELECT COUNT(*) FROM products",
+      "reference_row_count": 1,
+      "generated_row_count": 1,
+      "selected_chunk_ids": [
+        "metric:delivered_order_aov",
+        "metric:total_orders",
+        "table:products",
+        "metric:delivered_product_revenue",
+        "metric:average_delivery_days"
+      ],
+      "dependency_chunk_ids": [],
+      "error_type": null,
+      "reason": "Results match."
+    },
+    {
+      "case_id": "SQL_004",
+      "question": "Teslim edilmiş kaç sipariş var?",
+      "category": "filter",
+      "difficulty": "easy",
+      "status": "result_mismatch",
+      "matched": false,
+      "generated_sql": "SELECT COUNT(*) FROM orders WHERE order_delivered_customer_date IS NOT NULL;",
+      "reference_row_count": 1,
+      "generated_row_count": 1,
+      "selected_chunk_ids": [
+        "metric:total_orders"
+      ],
+      "dependency_chunk_ids": [
+        "table:orders"
+      ],
+      "error_type": null,
+      "reason": "Result values differ."
+    },
+    {
+      "case_id": "SQL_005",
+      "question": "İptal edilmiş kaç sipariş var?",
+      "category": "filter",
+      "difficulty": "easy",
+      "status": "result_mismatch",
+      "matched": false,
+      "generated_sql": "SELECT COUNT(*) FROM orders WHERE order_status = 'Cancelled';",
+      "reference_row_count": 1,
+      "generated_row_count": 1,
+      "selected_chunk_ids": [
+        "metric:total_orders"
+      ],
+      "dependency_chunk_ids": [
+        "table:orders"
+      ],
+      "error_type": null,
+      "reason": "Result values differ."
+    },
+    {
+      "case_id": "SQL_006",
+      "question": "Siparişlerin durumlarına göre dağılımı nedir?",
+      "category": "aggregation",
+      "difficulty": "medium",
+      "status": "correct",
+      "matched": true,
+      "generated_sql": "SELECT order_status, COUNT(*) AS order_count FROM orders GROUP BY order_status;",
+      "reference_row_count": 8,
+      "generated_row_count": 8,
+      "selected_chunk_ids": [
+        "table:orders"
+      ],
+      "dependency_chunk_ids": [],
+      "error_type": null,
+      "reason": "Results match."
+    },
+    {
+      "case_id": "SQL_007",
+      "question": "Müşterilerin eyaletlere göre dağılımı nedir?",
+      "category": "aggregation",
+      "difficulty": "medium",
+      "status": "correct",
+      "matched": true,
+      "generated_sql": "SELECT customer_state, COUNT(*) AS customer_count FROM customers GROUP BY customer_state;",
+      "reference_row_count": 27,
+      "generated_row_count": 27,
+      "selected_chunk_ids": [
+        "table:customers"
+      ],
+      "dependency_chunk_ids": [],
+      "error_type": null,
+      "reason": "Results match."
+    },
+    {
+      "case_id": "SQL_008",
+      "question": "Ödeme kayıtlarındaki toplam ödeme tutarı nedir?",
+      "category": "aggregation",
+      "difficulty": "medium",
+      "status": "correct",
+      "matched": true,
+      "generated_sql": "SELECT SUM(payment_value) AS total_payment_amount FROM order_payments",
+      "reference_row_count": 1,
+      "generated_row_count": 1,
+      "selected_chunk_ids": [
+        "table:order_payments"
+      ],
+      "dependency_chunk_ids": [],
+      "error_type": null,
+      "reason": "Results match."
+    },
+    {
+      "case_id": "SQL_009",
+      "question": "Ödeme kayıtlarının ortalama tutarı nedir?",
+      "category": "aggregation",
+      "difficulty": "medium",
+      "status": "correct",
+      "matched": true,
+      "generated_sql": "SELECT AVG(payment_value) AS average_payment_value FROM order_payments;",
+      "reference_row_count": 1,
+      "generated_row_count": 1,
+      "selected_chunk_ids": [
+        "table:order_payments"
+      ],
+      "dependency_chunk_ids": [],
+      "error_type": null,
+      "reason": "Results match."
+    },
+    {
+      "case_id": "SQL_010",
+      "question": "São Paulo eyaletindeki müşterilerin verdiği toplam sipariş sayısı kaçtır?",
+      "category": "join",
+      "difficulty": "medium",
+      "status": "correct",
+      "matched": true,
+      "generated_sql": "SELECT COUNT(*) AS total_orders\nFROM orders\nJOIN customers ON orders.customer_id = customers.customer_id\nWHERE customers.customer_state = 'SP';",
+      "reference_row_count": 1,
+      "generated_row_count": 1,
+      "selected_chunk_ids": [
+        "metric:total_orders"
+      ],
+      "dependency_chunk_ids": [
+        "table:orders",
+        "table:customers"
+      ],
+      "error_type": null,
+      "reason": "Results match."
+    },
+    {
+      "case_id": "SQL_011",
+      "question": "2018 yılında kaç sipariş verilmiş?",
+      "category": "date",
+      "difficulty": "medium",
+      "status": "correct",
+      "matched": true,
+      "generated_sql": "SELECT COUNT(*) FROM orders WHERE order_purchase_timestamp >= '2018-01-01' AND order_purchase_timestamp < '2019-01-01';",
+      "reference_row_count": 1,
+      "generated_row_count": 1,
+      "selected_chunk_ids": [
+        "metric:total_orders"
+      ],
+      "dependency_chunk_ids": [
+        "table:orders"
+      ],
+      "error_type": null,
+      "reason": "Results match."
+    },
+    {
+      "case_id": "SQL_012",
+      "question": "Her eyaletteki müşterilerin verdiği sipariş sayısını göster.",
+      "category": "join",
+      "difficulty": "hard",
+      "status": "result_mismatch",
+      "matched": false,
+      "generated_sql": "SELECT COUNT(*) AS total_orders FROM orders",
+      "reference_row_count": 27,
+      "generated_row_count": 1,
+      "selected_chunk_ids": [
+        "metric:total_orders"
+      ],
+      "dependency_chunk_ids": [
+        "table:orders",
+        "table:customers"
+      ],
+      "error_type": null,
+      "reason": "Row counts differ."
+    }
+  ]
+}
