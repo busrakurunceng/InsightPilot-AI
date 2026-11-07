@@ -1,4 +1,3 @@
-
 version: 1
 schema: public
 language: tr
@@ -108,3 +107,60 @@ rules:
   revenue_caveat: delivered_product_revenue muhasebe anlamında net gelir veya ödeme tahsilatı değildir.
   join_caveat: order_items ve order_payments aynı sipariş üzerinde doğrudan birleştirilirse çoktan çoğa çoğalma ve hatalı toplam oluşabilir.
   geolocation_caveat: geolocation_zip_code_prefix benzersiz olmadığı için doğrudan join satır sayısını artırabilir.
+
+# Conservative natural-language grouping dimensions. These definitions do not
+# automatically alter schema chunks or SQL generation prompts.
+dimensions:
+  customers.customer_state:
+    grouping_phrases:
+      - eyaletlere gore
+      - eyaletteki
+      - eyalet bazinda
+    owner_terms:
+      - musteri
+      - musteriler
+      - musterilerin
+      - musterileri
+      - musterilerinin
+  customers.customer_city:
+    grouping_phrases:
+      - sehirlere gore
+      - sehir bazinda
+      - sehirlerine gore
+    owner_terms:
+      - musteri
+      - musteriler
+      - musterilerin
+      - musterileri
+      - musterilerinin
+  sellers.seller_state:
+    grouping_phrases:
+      - eyaletlere gore
+      - eyaletteki
+      - eyalet bazinda
+    owner_terms:
+      - satici
+      - saticilar
+      - saticilarin
+      - saticilari
+  sellers.seller_city:
+    grouping_phrases:
+      - sehirlere gore
+      - sehir bazinda
+      - sehirlerine gore
+    owner_terms:
+      - satici
+      - saticilar
+      - saticilarin
+      - saticilari
+  orders.order_status:
+    grouping_phrases:
+      - durumlara gore
+      - durumuna gore
+      - durumlarina gore
+      - durum bazinda
+    owner_terms:
+      - siparis
+      - siparisler
+      - siparislerin
+      - siparisleri
