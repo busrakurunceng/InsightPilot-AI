@@ -1,6 +1,6 @@
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.backend.llm_client import OllamaClient
 from app.backend.sql_prompt_builder import build_sql_messages
@@ -33,26 +33,20 @@ def normalize_sql_response(response: str) -> str:
     opening_line = lines[0].strip()
     closing_line = lines[-1].strip()
 
-    # The response must start with a recognized fence.
     if OPENING_FENCE_PATTERN.fullmatch(
         opening_line
     ) is None:
         return cleaned
 
-    # The response must end with one closing fence.
     if closing_line != "```":
         return cleaned
 
     content_lines = lines[1:-1]
 
-    # Any additional fence means the response is
-    # ambiguous or contains multiple code blocks.
     if any("```" in line for line in content_lines):
         return cleaned
 
-    sql = "\n".join(content_lines).strip()
-
-    return sql
+    return "\n".join(content_lines).strip()
 
 
 @dataclass(frozen=True)
@@ -62,6 +56,11 @@ class SQLGenerationResult:
     model: str
     selected_chunk_ids: list[str]
     dependency_chunk_ids: list[str]
+    messages: list[dict[str, str]] = field(
+        default_factory=list,
+        repr=False,
+        compare=False,
+    )
 
 
 class SQLGenerator:
@@ -132,5 +131,106 @@ class SQLGenerator:
             dependency_chunk_ids=[
                 chunk["chunk_id"]
                 for chunk in dependency_results
+            ],
+            messages=[
+                dict(message)
+                for message in messages
+            ],
+        )
+
+    def regenerate(
+        self,
+        previous: SQLGenerationResult,
+        issues: list[str],
+    ) -> SQLGenerationResult:
+        """
+        Regenerate SQL using the original prompt context
+        and semantic validation feedback.
+
+        No new Schema RAG retrieval is performed.
+        """
+        if not isinstance(previous, SQLGenerationResult):
+            raise TypeError(
+                "Previous generation must be SQLGenerationResult."
+            )
+
+        if not previous.messages:
+            raise ValueError(
+                "Original SQL prompt context is unavailable."
+            )
+
+        if (
+            not isinstance(issues, list)
+            or not issues
+            or not all(
+                isinstance(issue, str) and issue.strip()
+                for issue in issues
+            )
+        ):
+            raise ValueError(
+                "Validation issues must be a non-empty list."
+            )
+
+        feedback = "\n".join(
+            f"- {issue.strip()}"
+            for issue in issues
+        )
+
+        messages = [
+            dict(message)
+            for message in previous.messages
+        ]
+
+        messages.append({
+            "role": "assistant",
+            "content": previous.sql,
+        })
+
+        messages.append({
+            "role": "user",
+            "content": (
+                "The previous SQL failed semantic validation.\n"
+                "Correct the SQL using ONLY the original "
+                "schema and business context.\n\n"
+                f"Validation issues:\n{feedback}\n\n"
+                "Requirements:\n"
+                "- Preserve the user's original measure.\n"
+                "- Include the required grouping dimension "
+                "in SELECT and GROUP BY.\n"
+                "- Use documented relationships for JOINs.\n"
+                "- Do not introduce unrequested filters.\n"
+                "- Return exactly one read-only SELECT query.\n"
+                "- Return SQL only, without explanations "
+                "or Markdown."
+            ),
+        })
+
+        response = self.llm_client.chat(
+            messages,
+            temperature=0.0,
+        )
+
+        sql = normalize_sql_response(
+            response.content
+        )
+
+        if not sql:
+            raise ValueError(
+                "LLM returned an empty SQL retry response."
+            )
+
+        return SQLGenerationResult(
+            question=previous.question,
+            sql=sql,
+            model=response.model,
+            selected_chunk_ids=list(
+                previous.selected_chunk_ids
+            ),
+            dependency_chunk_ids=list(
+                previous.dependency_chunk_ids
+            ),
+            messages=[
+                dict(message)
+                for message in previous.messages
             ],
         )
