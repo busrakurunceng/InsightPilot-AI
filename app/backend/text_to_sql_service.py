@@ -2,12 +2,17 @@
 from dataclasses import dataclass
 from typing import Any
 
-from app.backend.sql_generator import SQLGenerator
+from app.backend.question_dimension_mapper import (
+    infer_question_dimension,
+)
+from app.backend.semantic_sql_validator import (
+    validate_grouping_requirement,
+)
 from app.backend.sql_executor import SQLExecutor
+from app.backend.sql_generator import SQLGenerator
 from app.backend.sql_validator import validate_sql
 
 
-# Explicit physical-table allowlist for the Olist dataset.
 OLIST_ALLOWED_TABLES = frozenset({
     "customers",
     "orders",
@@ -34,7 +39,11 @@ class SQLGenerationPipelineError(TextToSQLError):
 
 
 class SQLValidationPipelineError(TextToSQLError):
-    """Generated SQL failed validation."""
+    """Generated SQL failed security validation."""
+
+
+class SQLSemanticValidationPipelineError(SQLValidationPipelineError):
+    """Generated SQL does not satisfy a required dimension."""
 
 
 class SQLExecutionPipelineError(TextToSQLError):
@@ -80,8 +89,6 @@ class TextToSQLService:
             )
         )
 
-        # Prevent different validation policies between
-        # the service and its executor.
         if frozenset(self.executor.allowed_tables) != self.allowed_tables:
             raise ValueError(
                 "Service and executor table allowlists must match."
@@ -109,7 +116,7 @@ class TextToSQLService:
                 "Insufficient schema or business context."
             )
 
-        # 3. Validate SQL before database access.
+        # 3. Validate SQL security before database access.
         try:
             validation = validate_sql(
                 sql,
@@ -120,7 +127,36 @@ class TextToSQLService:
                 "Generated SQL did not pass validation."
             ) from exc
 
-        # 4. Execute using the restricted database role.
+        # 4. Infer required grouping dimension.
+        try:
+            required_dimension = infer_question_dimension(question)
+        except Exception as exc:
+            raise SQLSemanticValidationPipelineError(
+                "Could not determine semantic grouping requirements."
+            ) from exc
+
+        # 5. Check semantic grouping requirements.
+        if required_dimension is not None:
+            try:
+                semantic_result = validate_grouping_requirement(
+                    validation.sql,
+                    required_dimension=required_dimension,
+                )
+            except Exception as exc:
+                raise SQLSemanticValidationPipelineError(
+                    "Semantic SQL validation failed."
+                ) from exc
+
+            if not semantic_result.valid:
+                issues = "; ".join(semantic_result.issues)
+
+                raise SQLSemanticValidationPipelineError(
+                    "Generated SQL does not satisfy the required "
+                    f"grouping dimension ({required_dimension}): "
+                    f"{issues}"
+                )
+
+        # 6. Execute using the restricted database role.
         try:
             execution = self.executor.execute(validation.sql)
         except Exception as exc:
