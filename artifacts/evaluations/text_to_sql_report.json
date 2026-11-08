@@ -1,13 +1,12 @@
 {
   "benchmark_name": "InsightPilot Text-to-SQL Benchmark",
   "benchmark_version": "0.1.0",
-  "evaluated_at": "2026-11-06T15:13:06.779541+00:00",
+  "evaluated_at": "2026-11-08T09:04:29.813013+00:00",
   "total_cases": 12,
-  "correct_cases": 11,
-  "execution_accuracy": 0.9166666666666666,
+  "correct_cases": 12,
+  "execution_accuracy": 1.0,
   "status_counts": {
-    "correct": 11,
-    "result_mismatch": 1
+    "correct": 12
   },
   "cases": [
     {
@@ -36,7 +35,7 @@
       "difficulty": "easy",
       "status": "correct",
       "matched": true,
-      "generated_sql": "SELECT COUNT(customer_id) AS total_customers\nFROM customers;",
+      "generated_sql": "SELECT COUNT(*) AS total_customers\nFROM customers;",
       "reference_row_count": 1,
       "generated_row_count": 1,
       "selected_chunk_ids": [
@@ -93,7 +92,7 @@
       "difficulty": "easy",
       "status": "correct",
       "matched": true,
-      "generated_sql": "SELECT COUNT(*) AS canceled_orders\nFROM orders\nWHERE order_status = 'canceled';",
+      "generated_sql": "SELECT COUNT(*) AS total_canceled_orders\nFROM orders\nWHERE order_status = 'canceled';",
       "reference_row_count": 1,
       "generated_row_count": 1,
       "selected_chunk_ids": [
@@ -112,7 +111,7 @@
       "difficulty": "medium",
       "status": "correct",
       "matched": true,
-      "generated_sql": "SELECT \n    order_status, \n    COUNT(order_id) AS order_count\nFROM \n    orders\nGROUP BY \n    order_status;",
+      "generated_sql": "SELECT \n    order_status, \n    COUNT(*) AS order_count\nFROM \n    orders\nGROUP BY \n    order_status;",
       "reference_row_count": 8,
       "generated_row_count": 8,
       "selected_chunk_ids": [
@@ -129,7 +128,7 @@
       "difficulty": "medium",
       "status": "correct",
       "matched": true,
-      "generated_sql": "SELECT customer_state, COUNT(*) AS customer_count FROM customers GROUP BY customer_state;",
+      "generated_sql": "SELECT customers.customer_state, COUNT(*) AS customer_count FROM customers GROUP BY customers.customer_state;",
       "reference_row_count": 27,
       "generated_row_count": 27,
       "selected_chunk_ids": [
@@ -217,11 +216,11 @@
       "question": "Her eyaletteki müşterilerin verdiği sipariş sayısını göster.",
       "category": "join",
       "difficulty": "hard",
-      "status": "result_mismatch",
-      "matched": false,
-      "generated_sql": "SELECT COUNT(*) AS total_orders\nFROM orders;",
+      "status": "correct",
+      "matched": true,
+      "generated_sql": "SELECT customers.customer_state, COUNT(*) AS total_orders\nFROM orders\nJOIN customers ON orders.customer_id = customers.customer_id\nGROUP BY customers.customer_state;",
       "reference_row_count": 27,
-      "generated_row_count": 1,
+      "generated_row_count": 27,
       "selected_chunk_ids": [
         "metric:total_orders"
       ],
@@ -230,7 +229,7 @@
         "table:customers"
       ],
       "error_type": null,
-      "reason": "Row counts differ."
+      "reason": "Results match."
     }
   ]
 }
