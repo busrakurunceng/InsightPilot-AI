@@ -4,7 +4,7 @@
 
 InsightPilot AI is an incremental AI engineering project for asking business questions about e-commerce data in natural language. It combines a validated PostgreSQL data foundation, a Streamlit analytics dashboard, semantic schema retrieval, and a locally hosted LLM that generates SQL for restricted, read-only execution.
 
-**Current status (6 November 2026):** Modules 1 and 2 are complete; Module 3 (Text-to-SQL) has a working end-to-end backend and is undergoing accuracy and semantic-validation improvements. The latest recorded 12-question Text-to-SQL benchmark achieved **11/12 correct (91.67%)**. This is an experimental benchmark result, not a production reliability claim. **Conversational querying through the dashboard and autonomous agent workflows are not yet implemented.**
+**Current status (8 November 2026):** **Modules 1, 2, and 3 are complete for the current project scope.** The latest live 12-question Text-to-SQL benchmark achieved **12/12 correct (100.00% execution accuracy)**, and the regression suite reported **327 passed, 2 skipped**. These results describe a small, observed evaluation—not production reliability or accuracy on unseen questions. **Conversational querying through the dashboard and autonomous agent workflows are not yet implemented.** Module 4 (Business Analytics) is next.
 
 ## What Works Today
 
@@ -13,7 +13,8 @@ InsightPilot AI is an incremental AI engineering project for asking business que
 - **Local Text-to-SQL:** Ollama running `qwen2.5-coder:7b-instruct`, grounded on retrieved schema and business semantics.
 - **Safe execution controls:** SQLGlot-based SQL validation, a dedicated PostgreSQL read-only role, read-only transactions, statement timeouts, and bounded result retrieval.
 - **Evaluation:** A reproducible 12-question benchmark, reference SQL execution, result comparison, error categorization, and automated tests.
-- **Experimental semantic validation:** A grouping-requirement prototype detects some missing or incorrect `GROUP BY` clauses when given an expected dimension. **It is not yet connected to the production Text-to-SQL pipeline.**
+- **Semantic validation and bounded retry:** Turkish question-to-dimension mapping, SQLGlot-based grouping checks, and one feedback-guided SQL regeneration attempt are integrated into `TextToSQLService`. Regenerated SQL is rechecked for safety and semantic requirements before execution.
+- **Verified milestone:** 12/12 correct in the latest live benchmark; 327 passed and 2 skipped in the latest regression suite.
 
 ## Technology Stack
 
@@ -24,7 +25,7 @@ InsightPilot AI is an incremental AI engineering project for asking business que
 | Dashboard | Streamlit, Plotly | Implemented |
 | Schema RAG | pgvector, sentence-transformers, multilingual MiniLM | Implemented |
 | Local LLM | Ollama, Qwen2.5-Coder 7B Instruct | Implemented |
-| SQL validation | SQLGlot | Implemented |
+| SQL safety and semantic validation | SQLGlot, question-to-dimension mapping, bounded regeneration | Implemented |
 | Tests and evaluation | pytest, SQL benchmark runner, result comparator | Implemented |
 | Agent orchestration | LangGraph | Planned |
 | HTTP API | FastAPI | Planned |
@@ -47,7 +48,7 @@ The project uses the [Brazilian E-Commerce Public Dataset by Olist](https://www.
 | `product_category_name_translation` | 71 |
 | **Total** | **1,550,922** |
 
-The semantic layer (`semantic/business_semantics.yaml`) documents table grains, five business metrics, business rules, and logical relationships. It distinguishes delivered-product sales revenue from payment receipts and warns against joins that multiply monetary values. Data validation reported **13/13 checks passed**; these checks do not establish that all possible data-quality issues are absent.
+The semantic layer (`semantic/business_semantics.yaml`) documents table grains, five business metrics, five grouping dimensions, business rules, and logical relationships. It distinguishes delivered-product sales revenue from payment receipts and warns against joins that multiply monetary values. Data validation reported **13/13 checks passed**; these checks do not establish that all possible data-quality issues are absent.
 
 **Data setup prerequisite:** The Olist CSV files and local credentials are not committed. Download the dataset separately, create the database tables using the repository's SQL definitions, and load the CSVs using the project's ingestion scripts. A Python environment alone is not sufficient to reproduce database-backed results.
 
@@ -66,6 +67,11 @@ Natural-language question
   -> SQL prompt + business semantics
   -> Ollama / Qwen2.5-Coder 7B
   -> SQLGlot SQL safety validation
+  -> Turkish question-to-dimension inference
+  -> Semantic grouping validation
+       -> If invalid: one feedback-guided SQL regeneration
+       -> Revalidate regenerated SQL for safety and semantics
+       -> Reject if regeneration fails or remains invalid
   -> Read-only PostgreSQL executor
   -> Structured SQL + query result
 
@@ -75,11 +81,11 @@ Evaluation path (implemented):
   -> Result comparator
   -> Evaluation report
 
-Semantic grouping validator (prototype only):
-SQL + explicitly provided required dimension
-  -> GROUP BY structure check
-  -> Validation result
-  [Not integrated into the Text-to-SQL service yet]
+Semantic grouping validator (integrated):
+Question + SQL
+  -> Infer a supported grouping dimension (if unambiguous)
+  -> Check required table, SELECT dimension, and GROUP BY
+  -> Return validation issues for bounded regeneration
 ```
 
 The Text-to-SQL backend is currently exercised through Python services and evaluation scripts; **the Streamlit dashboard does not yet provide a conversational Text-to-SQL interface**. No standalone HTTP API is implemented.
@@ -97,6 +103,11 @@ app/
     sql_executor.py
     text_to_sql_service.py
     semantic_sql_validator.py
+    question_dimension_mapper.py
+    question_table_relevance.py
+    context_selector.py
+    evaluation_runner.py
+    result_comparator.py
   database/               # Schema, constraints, indexes, KPI SQL
   frontend/               # Streamlit dashboard
 semantic/
@@ -152,33 +163,42 @@ These figures apply to the unchanged full Olist dataset, not a filtered date ran
 
 These are retrieval-context metrics, **not** SQL accuracy. Results are from the recorded retrieval evaluation and should not be interpreted as measurements of the latest Text-to-SQL pipeline. See `docs/schema_rag_validation_results.md`.
 
-## Module 3 — Text-to-SQL Engine (In Progress)
+## Module 3 — Text-to-SQL Engine (Completed)
 
-The backend integrates Schema RAG, a local Ollama LLM, SQL validation, and restricted PostgreSQL execution. Its output includes generated SQL, result rows, and retrieval metadata.
+The backend integrates Schema RAG, a local Ollama LLM, SQL safety validation, question-aware semantic checks, bounded SQL regeneration, and restricted PostgreSQL execution. Its output includes generated SQL, result rows, and retrieval metadata.
+
+### Semantic Validation and Retry
+
+- `question_dimension_mapper.py` infers supported grouping dimensions from Turkish questions using the semantic layer. Ambiguous questions are not assigned a forced dimension.
+- `semantic_sql_validator.py` checks the required table, selected grouping dimension, and `GROUP BY` structure, including common qualified-column and alias cases.
+- `TextToSQLService` validates SQL safety before semantic checks. If a grouping requirement is violated, it requests **at most one** regeneration with the original prompt context and explicit validation feedback.
+- Regenerated SQL must pass safety and semantic validation again; unsafe or persistently invalid SQL is not executed.
+- The validator is intentionally conservative and does not establish arbitrary query equivalence, correct join cardinality, or full business correctness.
 
 ### Benchmark Results
 
-A 12-case Turkish benchmark covers basic counts, filtering, aggregation, joins, and date-based queries. Generated and reference SQL are compared by execution results rather than by SQL string equality.
+The 12-case Turkish benchmark covers basic counts, filtering, aggregation, joins, and date-based queries. Generated and reference SQL are compared by execution results rather than SQL string equality.
 
 | Recorded iteration | Correct | Execution accuracy |
 |---|---:|---:|
 | Initial baseline | 5/12 | 41.67% |
 | Context precision improvements | 9/12 | 75.00% |
-| Business semantics grounding | **11/12** | **91.67%** |
+| Business semantics grounding | 11/12 | 91.67% |
+| Final evaluated pipeline (8 November 2026) | **12/12** | **100.00%** |
 
-**Remaining failure — SQL_012:** “Her eyaletteki müşterilerin verdiği sipariş sayısını göster.” The model still generates an overall order count rather than joining customers and grouping by `customer_state`, despite the required schema chunks being retrieved. A prompt-planning revision did not fix this case in an isolated live test.
-
-A separate `semantic_sql_validator.py` prototype can flag a missing required grouping dimension. It **does not infer that dimension from the question, check all join semantics, repair SQL, or run inside the end-to-end service yet**. The 91.67% figure therefore predates integration of any semantic validation or retry mechanism.
+**SQL_012 resolved in the final evaluation:** “Her eyaletteki müşterilerin verdiği sipariş sayısını göster.” The generated query joined `orders` and `customers` and grouped by `customers.customer_state`, returning 27 rows that matched the reference. The evaluation report does **not** distinguish first-attempt success from retry-assisted success.
 
 ### Automated Tests
 
-Latest observed local test run (6 November 2026):
+Latest reported regression suite (8 November 2026):
 
 ```text
-266 passed, 2 skipped in 12.64s
+327 passed, 2 skipped
 ```
 
-Passing unit tests and a small benchmark do not prove production-level accuracy or security.
+The semantic and retry integration test files together passed **15/15** tests. Passing unit tests and a small benchmark do not prove production-level accuracy or security.
+
+**Milestone commits:** `48c11cf` (automatic semantic SQL retry), `4b98c87` (100% benchmark artifact), and `d44b612` (Module 3 development log).
 
 ## Getting Started (Windows PowerShell)
 
@@ -271,7 +291,7 @@ The live evaluation requires the local Ollama model, embeddings, database, and r
 - PostgreSQL execution uses a dedicated read-only role and read-only transactions; database permissions remain the final access-control boundary.
 - Query timeouts and row limits reduce operational risk but do not eliminate all expensive-query risks.
 - Semantic correctness is **not** guaranteed by SQL syntax or safety validation.
-- The grouping validator is a standalone prototype, not yet enforced in the Text-to-SQL service.
+- Semantic grouping validation and one bounded retry are enforced in `TextToSQLService` for recognized dimensions; ambiguous or unsupported semantics and complex SQL patterns remain limitations.
 - Turkish paraphrases, multi-metric questions, complex joins, and ambiguous requests require broader evaluation.
 - The current benchmark has only 12 cases; the reported accuracy is not a generalization estimate.
 - No public API, conversational dashboard integration, agentic workflows, CI/CD pipeline, or production deployment is claimed.
@@ -282,7 +302,7 @@ The live evaluation requires the local Ollama model, embeddings, database, and r
 |---|---|---|
 | 1 | Data Foundation & Dashboard | Completed — `v0.1.0-data-dashboard` |
 | 2 | Schema RAG & Semantic Layer | Completed — `v0.2.0-schema-rag` |
-| 3 | Text-to-SQL Engine | End-to-end backend implemented; evaluation and semantic validation in progress |
+| 3 | Text-to-SQL Engine | Completed — 12/12 live benchmark; 327 passed, 2 skipped |
 | 4 | Business Analytics | Planned beyond existing dashboard KPIs |
 | 5 | LangGraph Agentic Workflows | Planned |
 | 6 | Extended Evaluation & Testing | Planned; baseline evaluation and regression tests already implemented |
@@ -304,6 +324,6 @@ A project license has not yet been selected.
 
 ---
 
-**Project status:** Modules 1–2 complete; Module 3 Text-to-SQL backend implemented and being improved. Latest recorded evaluation: 11/12 correct. Latest local test suite: 266 passed, 2 skipped.
+**Project status (8 November 2026):** Modules 1–3 complete for the current scope; Module 4 is next. Latest live Text-to-SQL evaluation: **12/12 correct (100.00%)**. Latest regression suite: **327 passed, 2 skipped**. Conversational dashboard integration and autonomous agent workflows remain planned.
 
 **Author:** Büşra Kurun
