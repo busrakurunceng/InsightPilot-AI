@@ -787,13 +787,163 @@ FROM orders;
 
 ---
 
+## Step 3.7.3.6.2: Question-to-Dimension Mapping
+
+**Status:** Completed
+
+- Expanded `semantic/business_semantics.yaml` with five
+  schema-grounded grouping dimensions:
+  `customers.customer_state`, `customers.customer_city`,
+  `orders.order_status`, `sellers.seller_state`,
+  and `sellers.seller_city`.
+- Added `app/backend/question_dimension_mapper.py`.
+- Implemented conservative Turkish grouping phrase and
+  owner-term matching.
+- Ambiguous questions return `None` rather than forcing
+  an unsupported dimension.
+- Added 19 tests in `tests/test_question_dimension_mapper.py`.
+- **Tests:** 285 passed, 2 skipped.
+- **Git commit:** `f322911`.
+
+## Step 3.7.3.6.3: Strengthened Semantic SQL Validation
+
+**Status:** Completed
+
+- Strengthened `app/backend/semantic_sql_validator.py`.
+- Added validation of required physical tables, selected
+  grouping dimensions and GROUP BY expressions.
+- Added qualified-column and table-alias handling.
+- Rejects unsupported complex query scopes conservatively.
+- Expanded semantic validator tests to 19.
+- **Tests:** 298 passed, 2 skipped.
+- **Git commit:** `453db65`.
+
+**Limitations:** The grouping validator is intentionally
+conservative. It does not prove arbitrary SQL equivalence,
+validate all join cardinalities or support every complex
+SQL scope.
+
+## Step 3.7.3.6.4: Semantic Validation Service Integration
+
+**Status:** Completed
+
+- Integrated question-to-dimension inference into
+  `TextToSQLService`.
+- Added semantic checks after security validation and
+  before SQL execution.
+- Established fail-closed behavior for semantic validation
+  errors.
+- Added semantic integration tests.
+- **Tests:** 304 passed, 2 skipped.
+
+## Step 3.7.3.6.5: Feedback-Based SQL Regeneration
+
+**Status:** Completed
+
+- Extended `SQLGenerationResult` with original prompt
+  messages for controlled regeneration.
+- Added `SQLGenerator.regenerate(previous, issues)`.
+- Regeneration preserves original Schema RAG context,
+  previous SQL and validation feedback.
+- Does not repeat schema retrieval during retry.
+- Added 14 SQL generator retry tests.
+- **Tests:** 318 passed, 2 skipped.
+
+## Step 3.7.3.6.6: Bounded Automatic Semantic SQL Retry
+
+**Status:** Completed
+
+- Integrated a single semantic regeneration attempt into
+  `TextToSQLService`.
+- Security validation runs before semantic validation.
+- A semantic failure triggers at most one regeneration.
+- Regenerated SQL must pass security and semantic checks
+  before execution.
+- Unsafe SQL, failed regeneration and persistent semantic
+  mismatches stop execution.
+- Updated semantic integration tests and added retry
+  integration tests.
+- **Integration tests:** 15 passed.
+- **Full regression suite:** 327 passed, 2 skipped.
+- **Git commit:** `48c11cf feat: integrate automatic semantic SQL retry`.
+- Commit pushed to `origin/main`.
+
+## Step 3.7.4: Final Live Text-to-SQL Evaluation
+
+**Status:** Completed
+
+- Re-ran the 12-case benchmark against the configured
+  local LLM and PostgreSQL database.
+- Preserved the previous report before overwriting
+  `artifacts/evaluations/text_to_sql_report.json`.
+- **Final evaluation:** 12/12 correct, 100.00%
+  execution accuracy.
+- All benchmark cases reported `status: correct`.
+- SQL_012 produced a query joining `orders` and
+  `customers`, selecting `customers.customer_state`
+  and grouping by that dimension.
+- SQL_012 returned 27 rows matching the reference result.
+
+### Benchmark Progression
+
+| Stage | Correct | Execution accuracy |
+|---|---:|---:|
+| Initial baseline | 5/12 | 41.67% |
+| Context precision | 9/12 | 75.00% |
+| Business semantics grounding | 11/12 | 91.67% |
+| Final evaluated pipeline | 12/12 | 100.00% |
+
+**Important interpretation:** The benchmark contains only
+12 questions. Its final accuracy is an observed result
+for this evaluation run, not a guarantee of performance
+on unseen questions. The evaluation report does not
+separately record whether SQL_012 succeeded on the
+initial generation or after semantic regeneration.
+
+## Module 3: Text-to-SQL Engine — Completion Summary
+
+**Status:** Completed for the current project scope
+
+Implemented components:
+
+1. Schema RAG-based SQL generation with Ollama.
+2. Business semantics and schema dependency enrichment.
+3. SQLGlot-based security validation and table allowlists.
+4. Read-only PostgreSQL execution with query timeouts
+   and row limits.
+5. Semantics-driven grouping dimension inference.
+6. Structural semantic SQL validation.
+7. Bounded feedback-based SQL regeneration.
+8. Automated result comparison and benchmark evaluation.
+
+### Verified Results
+
+- **327 passed, 2 skipped** in the final regression suite.
+- **12/12 correct** on the final live benchmark.
+- **100.00% observed execution accuracy**.
+- Automatic retry integration pushed in commit `48c11cf`.
+
+### Known Limitations and Future Improvements
+
+- Expand the benchmark beyond 12 questions.
+- Add unseen paraphrases, ambiguous requests, adversarial
+  questions and multi-table analytical scenarios.
+- Track initial versus retried SQL and retry success rate.
+- Improve error diagnostics and evaluation traceability.
+- Expand semantic validation beyond simple grouping
+  requirements.
+- Evaluate latency and consistency across repeated runs.
+
+---
+
 ## Next Steps
 
-1. Implement Step 3.7.3.6.2: schema-grounded question-to-dimension mapping, with Turkish paraphrase tests and explicit no-grouping cases.
-2. Strengthen semantic validation for aliases, qualified columns, ordinal grouping, joins and false positives before integrating it into the service.
-3. Add bounded SQL regeneration only after validation and safety boundaries are defined; revalidate every regenerated query.
-4. Preserve existing evaluation artifacts **before** rerunning the benchmark; compare all 12 cases and record regressions as well as improvements.
-5. Keep `docs/development_log.md` and `docs/text_to_sql_evaluation.md` synchronized with tested milestones. Commit documentation in a separate, scoped Git commit.
+1. Begin Module 4: Business Analytics.
+2. Define analytical capabilities, reusable metrics and
+   visualization requirements.
+3. Preserve the existing Text-to-SQL evaluation reports.
+4. Keep regression tests and security boundaries intact.
+5. Continue milestone-based commits and documentation.
 
 ## Development Principles
 
