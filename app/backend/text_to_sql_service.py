@@ -64,7 +64,7 @@ class TextToSQLResult:
 
 
 class TextToSQLService:
-    """Orchestrate SQL generation, validation and execution."""
+    """Orchestrate SQL generation, validation, retry and execution."""
 
     def __init__(
         self,
@@ -94,13 +94,44 @@ class TextToSQLService:
                 "Service and executor table allowlists must match."
             )
 
+    def _validate_security(self, sql: str):
+        try:
+            return validate_sql(
+                sql,
+                allowed_tables=set(self.allowed_tables),
+            )
+        except Exception as exc:
+            raise SQLValidationPipelineError(
+                "Generated SQL did not pass security validation."
+            ) from exc
+
+    def _validate_semantics(
+        self,
+        sql: str,
+        required_dimension: str | None,
+    ) -> list[str]:
+        if required_dimension is None:
+            return []
+
+        try:
+            result = validate_grouping_requirement(
+                sql,
+                required_dimension=required_dimension,
+            )
+        except Exception as exc:
+            raise SQLSemanticValidationPipelineError(
+                "Semantic SQL validation failed."
+            ) from exc
+
+        return result.issues
+
     def run(self, question: str) -> TextToSQLResult:
         if not isinstance(question, str) or not question.strip():
             raise ValueError("Question must not be empty.")
 
         question = question.strip()
 
-        # 1. Generate SQL using Schema RAG and Ollama.
+        # 1. Initial SQL generation.
         try:
             generation = self.generator.generate(question)
         except Exception as exc:
@@ -110,24 +141,15 @@ class TextToSQLService:
 
         sql = generation.sql.strip()
 
-        # 2. Handle explicit model abstention.
         if sql.upper() == "INSUFFICIENT_CONTEXT":
             raise InsufficientContextError(
                 "Insufficient schema or business context."
             )
 
-        # 3. Validate SQL security before database access.
-        try:
-            validation = validate_sql(
-                sql,
-                allowed_tables=set(self.allowed_tables),
-            )
-        except Exception as exc:
-            raise SQLValidationPipelineError(
-                "Generated SQL did not pass validation."
-            ) from exc
+        # 2. Security validation always runs first.
+        validation = self._validate_security(sql)
 
-        # 4. Infer required grouping dimension.
+        # 3. Infer the required grouping dimension.
         try:
             required_dimension = infer_question_dimension(question)
         except Exception as exc:
@@ -135,28 +157,47 @@ class TextToSQLService:
                 "Could not determine semantic grouping requirements."
             ) from exc
 
-        # 5. Check semantic grouping requirements.
-        if required_dimension is not None:
+        # 4. Validate semantic grouping requirements.
+        issues = self._validate_semantics(
+            validation.sql,
+            required_dimension,
+        )
+
+        # 5. Retry exactly once for semantic mismatches.
+        if issues:
             try:
-                semantic_result = validate_grouping_requirement(
-                    validation.sql,
-                    required_dimension=required_dimension,
+                generation = self.generator.regenerate(
+                    generation,
+                    issues=issues,
                 )
             except Exception as exc:
-                raise SQLSemanticValidationPipelineError(
-                    "Semantic SQL validation failed."
+                raise SQLGenerationPipelineError(
+                    "SQL regeneration failed."
                 ) from exc
 
-            if not semantic_result.valid:
-                issues = "; ".join(semantic_result.issues)
+            retry_sql = generation.sql.strip()
 
-                raise SQLSemanticValidationPipelineError(
-                    "Generated SQL does not satisfy the required "
-                    f"grouping dimension ({required_dimension}): "
-                    f"{issues}"
+            if retry_sql.upper() == "INSUFFICIENT_CONTEXT":
+                raise InsufficientContextError(
+                    "Insufficient context after SQL regeneration."
                 )
 
-        # 6. Execute using the restricted database role.
+            # The regenerated SQL must pass security checks too.
+            validation = self._validate_security(retry_sql)
+
+            retry_issues = self._validate_semantics(
+                validation.sql,
+                required_dimension,
+            )
+
+            if retry_issues:
+                raise SQLSemanticValidationPipelineError(
+                    "SQL regeneration did not satisfy "
+                    f"the required dimension ({required_dimension}): "
+                    + "; ".join(retry_issues)
+                )
+
+        # 6. Execute only fully validated SQL.
         try:
             execution = self.executor.execute(validation.sql)
         except Exception as exc:
