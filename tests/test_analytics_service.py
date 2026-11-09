@@ -223,7 +223,11 @@ def test_conversion_initializes_analytics_fields():
     assert response.visualization.x_column == "customer_state"
     assert response.visualization.y_column == "total_orders"
 
-    assert response.insights == []
+    assert response.insights == [
+    "Highest total_orders: SP (100).",
+    "Lowest total_orders: RJ (50).",
+    "Sum of returned total_orders values: 150.",
+]
 
 def test_service_populates_column_profiles():
     backend = Mock()
@@ -587,3 +591,193 @@ def test_conversion_produces_valid_visualization_contract():
     assert spec.chart_type == "bar"
     assert spec.x_column in response.columns
     assert spec.y_column in response.columns
+
+
+def test_service_generates_categorical_insights():
+    backend = Mock()
+    backend.run.return_value = make_text_to_sql_result()
+
+    service = AnalyticsService(
+        text_to_sql_service=backend
+    )
+
+    response = service.run(
+        "Eyaletlere göre sipariş sayılarını göster."
+    )
+
+    assert response.insights == [
+        "Highest total_orders: SP (100).",
+        "Lowest total_orders: RJ (50).",
+        "Sum of returned total_orders values: 150.",
+    ]
+
+
+def test_service_generates_kpi_insight():
+    backend = Mock()
+    backend.run.return_value = make_text_to_sql_result(
+        columns=["total_orders"],
+        rows=[{"total_orders": 99441}],
+        row_count=1,
+    )
+
+    service = AnalyticsService(
+        text_to_sql_service=backend
+    )
+
+    response = service.run("Toplam kaç sipariş var?")
+
+    assert response.visualization.chart_type == "kpi"
+    assert response.insights == [
+        "total_orders: 99441."
+    ]
+
+
+def test_service_generates_decimal_insight():
+    from decimal import Decimal
+
+    backend = Mock()
+    backend.run.return_value = make_text_to_sql_result(
+        columns=["revenue"],
+        rows=[{"revenue": Decimal("1250.50")}],
+        row_count=1,
+    )
+
+    service = AnalyticsService(
+        text_to_sql_service=backend
+    )
+
+    response = service.run("Toplam gelir nedir?")
+
+    assert response.insights == [
+        "revenue: 1250.5."
+    ]
+
+
+def test_service_handles_empty_result_insight():
+    backend = Mock()
+    backend.run.return_value = make_text_to_sql_result(
+        rows=[],
+        row_count=0,
+    )
+
+    service = AnalyticsService(
+        text_to_sql_service=backend
+    )
+
+    response = service.run("Siparişleri göster.")
+
+    assert response.visualization.chart_type == "table"
+    assert response.insights == [
+        "The query returned no rows."
+    ]
+
+
+def test_service_avoids_insights_for_truncated_results():
+    backend = Mock()
+    backend.run.return_value = make_text_to_sql_result(
+        truncated=True
+    )
+
+    service = AnalyticsService(
+        text_to_sql_service=backend
+    )
+
+    response = service.run(
+        "Eyaletlere göre siparişleri göster."
+    )
+
+    assert response.truncated is True
+    assert len(response.insights) == 1
+    assert "truncated" in response.insights[0]
+
+    assert not any(
+        "Highest" in insight
+        for insight in response.insights
+    )
+
+
+def test_service_handles_missing_measure_values():
+    backend = Mock()
+    backend.run.return_value = make_text_to_sql_result(
+        rows=[
+            {"customer_state": "SP", "total_orders": 100},
+            {"customer_state": "RJ", "total_orders": None},
+        ],
+    )
+
+    service = AnalyticsService(
+        text_to_sql_service=backend
+    )
+
+    response = service.run(
+        "Eyaletlere göre siparişleri göster."
+    )
+
+    assert any(
+        "Highest total_orders: SP (100)." == insight
+        for insight in response.insights
+    )
+
+    assert any(
+        "excluded" in insight
+        for insight in response.insights
+    )
+
+    assert not any(
+        "Sum of returned" in insight
+        for insight in response.insights
+    )
+
+
+def test_service_returns_complete_analytics_response():
+    backend = Mock()
+    backend.run.return_value = make_text_to_sql_result()
+
+    service = AnalyticsService(
+        text_to_sql_service=backend
+    )
+
+    response = service.run(
+        "Eyaletlere göre siparişleri göster."
+    )
+
+    assert isinstance(response, AnalyticsResponse)
+
+    assert response.sql
+    assert response.row_count == 2
+    assert len(response.rows) == 2
+
+    assert len(response.column_profiles) == 2
+    assert response.visualization is not None
+    assert len(response.insights) == 3
+
+    assert response.model == "qwen2.5-coder:7b-instruct"
+
+    backend.run.assert_called_once()
+
+
+def test_service_does_not_mutate_source_when_generating_insights():
+    result = make_text_to_sql_result()
+
+    original_rows = [
+        dict(row)
+        for row in result.rows
+    ]
+
+    backend = Mock()
+    backend.run.return_value = result
+
+    service = AnalyticsService(
+        text_to_sql_service=backend
+    )
+
+    response = service.run(
+        "Eyaletlere göre siparişleri göster."
+    )
+
+    assert len(response.insights) == 3
+    assert result.rows == original_rows
+    assert result.columns == [
+        "customer_state",
+        "total_orders",
+    ]
