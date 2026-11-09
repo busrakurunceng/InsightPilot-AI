@@ -1,13 +1,17 @@
 
-"""Service adapter between Text-to-SQL and Business Analytics.
+"""Business analytics service orchestration.
 
-Module 4.2.2:
-- Reuse the existing TextToSQLService.
+Module 4.3.2:
+- Execute questions through the existing TextToSQLService.
 - Convert TextToSQLResult into AnalyticsResponse.
-- Profile result columns automatically.
-- Preserve result metadata.
-- Do not modify SQL generation or execution.
+- Profile returned columns.
+- Recommend a visualization based on the result structure.
+- Preserve SQL and RAG metadata.
+
+No additional LLM or database calls are introduced.
 """
+
+from dataclasses import replace
 
 from app.backend.analytics_contract import AnalyticsResponse
 from app.backend.result_profiler import profile_result
@@ -15,12 +19,15 @@ from app.backend.text_to_sql_service import (
     TextToSQLResult,
     TextToSQLService,
 )
+from app.backend.visualization_recommender import (
+    recommend_visualization,
+)
 
 
 def to_analytics_response(
     result: TextToSQLResult,
 ) -> AnalyticsResponse:
-    """Convert a Text-to-SQL result into a profiled analytics response."""
+    """Convert a Text-to-SQL result into a complete analytics response."""
 
     if not isinstance(result, TextToSQLResult):
         raise TypeError(
@@ -35,7 +42,7 @@ def to_analytics_response(
         rows=rows,
     )
 
-    return AnalyticsResponse(
+    response = AnalyticsResponse(
         question=result.question,
         sql=result.sql,
         columns=columns,
@@ -48,9 +55,16 @@ def to_analytics_response(
         dependency_chunk_ids=list(result.dependency_chunk_ids),
     )
 
+    visualization = recommend_visualization(response)
+
+    return replace(
+        response,
+        visualization=visualization,
+    )
+
 
 class AnalyticsService:
-    """Orchestrate Text-to-SQL and analytics result conversion."""
+    """Run the existing Text-to-SQL pipeline and enrich its results."""
 
     def __init__(
         self,
@@ -63,7 +77,7 @@ class AnalyticsService:
         )
 
     def run(self, question: str) -> AnalyticsResponse:
-        """Execute a question and return a profiled analytics result."""
+        """Execute a question and return a visualization-ready response."""
 
         if not isinstance(question, str) or not question.strip():
             raise ValueError(
