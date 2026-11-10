@@ -1,7 +1,10 @@
 
-"""Pure helpers for Conversational BI chat history."""
+"""State management for the Conversational BI interface."""
 
-from dataclasses import dataclass
+import json
+from dataclasses import asdict, dataclass
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Literal
 
 from app.backend.analytics_contract import AnalyticsResponse
@@ -42,17 +45,12 @@ def add_user_message(
     history: list[ChatMessage],
     question: str,
 ) -> list[ChatMessage]:
-    """Return a new history containing the user's question."""
-
     if not isinstance(history, list):
         raise TypeError("History must be a list.")
 
     return [
         *history,
-        ChatMessage(
-            role="user",
-            content=question,
-        ),
+        ChatMessage(role="user", content=question),
     ]
 
 
@@ -61,8 +59,6 @@ def add_assistant_message(
     content: str,
     response: AnalyticsResponse | None = None,
 ) -> list[ChatMessage]:
-    """Return a new history containing an assistant message."""
-
     if not isinstance(history, list):
         raise TypeError("History must be a list.")
 
@@ -74,3 +70,57 @@ def add_assistant_message(
             response=response,
         ),
     ]
+
+
+def build_error_message() -> str:
+    """Return a safe, user-facing error message."""
+
+    return (
+        "The analysis could not be completed. "
+        "Please check the database connection, "
+        "Ollama availability, and application logs."
+    )
+
+
+def _json_default(value):
+    """Convert supported non-JSON types for export."""
+
+    if isinstance(value, Decimal):
+        return str(value)
+
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+
+    raise TypeError(
+        f"Unsupported JSON value: {type(value).__name__}"
+    )
+
+
+def export_chat_history(
+    history: list[ChatMessage],
+) -> str:
+    """Serialize chat history and analytics results to JSON."""
+
+    if not isinstance(history, list):
+        raise TypeError("History must be a list.")
+
+    if not all(isinstance(item, ChatMessage) for item in history):
+        raise TypeError(
+            "History must contain ChatMessage objects."
+        )
+
+    payload = {
+        "format_version": 1,
+        "messages": [
+            asdict(message)
+            for message in history
+        ],
+    }
+
+    return json.dumps(
+        payload,
+        ensure_ascii=False,
+        indent=2,
+        default=_json_default,
+        allow_nan=False,
+    )

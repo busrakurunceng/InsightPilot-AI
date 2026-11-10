@@ -1,20 +1,9 @@
 
-"""Conversational BI Streamlit page.
+"""Conversational BI Streamlit page."""
 
-Module 4.5.1:
-- Accept natural-language analytics questions.
-- Call AnalyticsService.
-- Display SQL results and deterministic insights.
-- Maintain chat history in Streamlit session state.
-- Handle backend errors without crashing the page.
-"""
-
+import logging
 import sys
 from pathlib import Path
-
-from app.frontend.components.analytics_renderer import (
-    render_visualization,
-)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -30,29 +19,39 @@ from app.frontend.chat_state import (
     ChatMessage,
     add_assistant_message,
     add_user_message,
+    build_error_message,
+    export_chat_history,
 )
+from app.frontend.components.analytics_renderer import (
+    render_visualization,
+)
+
+
+logger = logging.getLogger(__name__)
+
+HISTORY_KEY = "analytics_chat_history"
 
 
 @st.cache_resource
 def get_analytics_service() -> AnalyticsService:
-    """Create one reusable analytics service per cache lifecycle."""
-
     return AnalyticsService()
 
 
-def render_analytics_result(response: AnalyticsResponse) -> None:
-    """Render analytics results without executing another SQL query."""
+def render_analytics_result(
+    response: AnalyticsResponse,
+) -> None:
+    """Render the result table, chart, insights, and SQL."""
 
     st.markdown("#### Analysis Results")
 
     st.caption(
-        f"Returned rows: {response.row_count}"
+        f"Returned rows: {response.row_count:,}"
     )
 
     if response.truncated:
         st.warning(
-            "The result is truncated. "
-            "Only a subset of rows is displayed."
+            "The result was truncated. "
+            "Charts and insights may reflect only the returned rows."
         )
 
     if response.rows:
@@ -69,7 +68,7 @@ def render_analytics_result(response: AnalyticsResponse) -> None:
     else:
         st.info("The query returned no rows.")
 
-    if response.visualization is not None:
+    if response.visualization is not None and response.rows:
         st.markdown("#### Visualization")
         render_visualization(response)
 
@@ -80,22 +79,14 @@ def render_analytics_result(response: AnalyticsResponse) -> None:
             st.markdown(f"- {insight}")
 
     with st.expander("View Generated SQL"):
-        st.code(
-            response.sql,
-            language="sql",
-        )
+        st.code(response.sql, language="sql")
 
     with st.expander("Technical Details"):
-        st.write(
-            "Model:",
-            response.model or "Not specified",
-        )
-
+        st.write("Model:", response.model or "Not specified")
         st.write(
             "Selected schema chunks:",
             response.selected_chunk_ids,
         )
-
         st.write(
             "Dependency schema chunks:",
             response.dependency_chunk_ids,
@@ -103,18 +94,64 @@ def render_analytics_result(response: AnalyticsResponse) -> None:
 
 
 def render_message(message: ChatMessage) -> None:
-    """Display one saved conversation message."""
+    """Display one message and its saved analytics result."""
 
     with st.chat_message(message.role):
-        st.markdown(message.content)
+        if (
+            message.role == "assistant"
+            and message.response is None
+            and message.content == build_error_message()
+        ):
+            st.error(message.content)
+        else:
+            st.markdown(message.content)
 
         if message.response is not None:
             render_analytics_result(message.response)
 
 
-def main() -> None:
-    """Render the Conversational BI interface."""
+def initialize_history() -> None:
+    """Create an empty history for a new Streamlit session."""
 
+    if HISTORY_KEY not in st.session_state:
+        st.session_state[HISTORY_KEY] = []
+
+
+def render_sidebar(history: list[ChatMessage]) -> None:
+    """Show conversation controls."""
+
+    with st.sidebar:
+        st.divider()
+        st.subheader("Conversation")
+
+        user_messages = sum(
+            message.role == "user"
+            for message in history
+        )
+
+        st.caption(
+            f"Questions in this session: {user_messages}"
+        )
+
+        if history:
+            st.download_button(
+                label="Export Conversation (JSON)",
+                data=export_chat_history(history),
+                file_name="insightpilot_conversation.json",
+                mime="application/json",
+                use_container_width=True,
+            )
+
+        if st.button(
+            "Clear Conversation",
+            use_container_width=True,
+            disabled=not history,
+        ):
+            st.session_state[HISTORY_KEY] = []
+            st.rerun()
+
+
+def main() -> None:
     st.title("Conversational BI")
 
     st.caption(
@@ -122,23 +159,13 @@ def main() -> None:
         "using natural language."
     )
 
-    if "analytics_chat_history" not in st.session_state:
-        st.session_state.analytics_chat_history = []
+    initialize_history()
 
     history: list[ChatMessage] = (
-        st.session_state.analytics_chat_history
+        st.session_state[HISTORY_KEY]
     )
 
-    with st.sidebar:
-        st.divider()
-        st.subheader("Conversation")
-
-        if st.button(
-            "Clear Conversation",
-            use_container_width=True,
-        ):
-            st.session_state.analytics_chat_history = []
-            st.rerun()
+    render_sidebar(history)
 
     if not history:
         st.info(
@@ -172,7 +199,7 @@ def main() -> None:
         question,
     )
 
-    st.session_state.analytics_chat_history = history
+    st.session_state[HISTORY_KEY] = history
 
     with st.chat_message("user"):
         st.markdown(question)
@@ -181,15 +208,14 @@ def main() -> None:
         with st.spinner("Analyzing your question..."):
             try:
                 service = get_analytics_service()
-
                 response = service.run(question)
 
             except Exception:
-                error_message = (
-                    "The analysis could not be completed. "
-                    "Check the database connection, "
-                    "local model availability, and application logs."
+                logger.exception(
+                    "Conversational analytics failed."
                 )
+
+                error_message = build_error_message()
 
                 st.error(error_message)
 
@@ -213,7 +239,7 @@ def main() -> None:
                     response=response,
                 )
 
-    st.session_state.analytics_chat_history = history
+    st.session_state[HISTORY_KEY] = history
 
 
 main()
