@@ -12,6 +12,10 @@ Module 4.5.1:
 import sys
 from pathlib import Path
 
+from app.frontend.components.analytics_renderer import (
+    render_visualization,
+)
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 if str(PROJECT_ROOT) not in sys.path:
@@ -66,11 +70,8 @@ def render_analytics_result(response: AnalyticsResponse) -> None:
         st.info("The query returned no rows.")
 
     if response.visualization is not None:
-        spec = response.visualization
-
-        st.caption(
-            f"Recommended visualization: {spec.chart_type}"
-        )
+        st.markdown("#### Visualization")
+        render_visualization(response)
 
     if response.insights:
         st.markdown("#### Business Insights")
