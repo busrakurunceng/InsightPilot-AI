@@ -12,6 +12,10 @@ from app.backend.sql_executor import SQLExecutor
 from app.backend.sql_generator import SQLGenerator
 from app.backend.sql_validator import validate_sql
 
+from app.backend.sql_schema_validator import (
+    SQLSchemaValidationError,
+    validate_sql_schema,
+)
 
 OLIST_ALLOWED_TABLES = frozenset({
     "customers",
@@ -125,7 +129,27 @@ class TextToSQLService:
 
         return result.issues
 
+    
+    def _validate_database_schema(self, sql: str) -> None:
+        """Check SQL against actual PostgreSQL metadata."""
+
+        try:
+            validate_sql_schema(
+                sql,
+                engine=self.executor.engine,
+                allowed_tables=self.allowed_tables,
+                timeout_ms=self.executor.timeout_ms,
+            )
+        except SQLSchemaValidationError as exc:
+            raise SQLValidationPipelineError(
+                "Generated SQL references an invalid "
+                "database object or cannot be planned."
+            ) from exc
+
+
     def run(self, question: str) -> TextToSQLResult:
+        """Generate, validate and execute a read-only SQL query."""
+
         if not isinstance(question, str) or not question.strip():
             raise ValueError("Question must not be empty.")
 
@@ -182,7 +206,7 @@ class TextToSQLService:
                     "Insufficient context after SQL regeneration."
                 )
 
-            # The regenerated SQL must pass security checks too.
+            # Regenerated SQL must pass security validation.
             validation = self._validate_security(retry_sql)
 
             retry_issues = self._validate_semantics(
@@ -197,7 +221,10 @@ class TextToSQLService:
                     + "; ".join(retry_issues)
                 )
 
-        # 6. Execute only fully validated SQL.
+        # 6. Validate against the actual PostgreSQL schema.
+        self._validate_database_schema(validation.sql)
+
+        # 7. Execute only fully validated SQL.
         try:
             execution = self.executor.execute(validation.sql)
         except Exception as exc:
@@ -205,6 +232,7 @@ class TextToSQLService:
                 "Validated SQL execution failed."
             ) from exc
 
+        # 8. Return the result.
         return TextToSQLResult(
             question=question,
             sql=validation.sql,

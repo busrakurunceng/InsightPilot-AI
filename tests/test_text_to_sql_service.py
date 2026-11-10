@@ -4,6 +4,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+pytestmark = pytest.mark.usefixtures("mock_schema_validation")
+
 from app.backend.sql_executor import SQLExecutionResult
 from app.backend.sql_generator import SQLGenerationResult
 from app.backend.text_to_sql_service import (
