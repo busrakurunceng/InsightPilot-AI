@@ -1,9 +1,12 @@
 
 """
-Profile the real InsightPilot Text-to-SQL pipeline.
+InsightPilot-AI Text-to-SQL performance and retry profiler.
 
 Run:
     python -m scripts.profile_text_to_sql
+
+Uses real Ollama and PostgreSQL.
+Does not modify application source files.
 """
 
 import time
@@ -14,6 +17,7 @@ from app.backend import sql_generator as generator_module
 from app.backend import text_to_sql_service as service_module
 from app.backend.llm_client import OllamaClient
 from app.backend.sql_executor import SQLExecutor
+from app.backend.sql_generator import SQLGenerator
 from app.backend.text_to_sql_service import (
     OLIST_ALLOWED_TABLES,
     TextToSQLService,
@@ -24,11 +28,14 @@ QUESTION = "Her eyaletteki müşteri sayısı nedir?"
 
 timings = {}
 ollama_details = []
+retry_details = []
+generation_details = []
 
 
 @contextmanager
 def measure(name):
     start = time.perf_counter()
+
     try:
         yield
     finally:
@@ -47,18 +54,22 @@ def wrap_function(original, name):
 def seconds_from_ns(value):
     if value is None:
         return None
+
     return value / 1_000_000_000
 
 
 def format_seconds(value):
     if value is None:
         return "N/A"
+
     return f"{value:.3f} s"
 
 
 def main():
     timings.clear()
     ollama_details.clear()
+    retry_details.clear()
+    generation_details.clear()
 
     original_search = generator_module.search_schema
     original_prompt = generator_module.build_sql_messages
@@ -70,6 +81,9 @@ def main():
     )
     original_schema = service_module.validate_sql_schema
     original_execute = SQLExecutor.execute
+
+    original_generate = SQLGenerator.generate
+    original_regenerate = SQLGenerator.regenerate
 
     def timed_chat(self, *args, **kwargs):
         with measure("Ollama HTTP"):
@@ -99,6 +113,52 @@ def main():
 
         return response
 
+    def traced_generate(self, *args, **kwargs):
+        with measure("Initial SQL Generation"):
+            result = original_generate(
+                self, *args, **kwargs
+            )
+
+        generation_details.append({
+            "type": "initial",
+            "sql": result.sql,
+        })
+
+        return result
+
+    def traced_regenerate(
+        self,
+        previous,
+        issues,
+        *,
+        validation_type="semantic",
+    ):
+        retry_record = {
+            "type": validation_type,
+            "original_sql": previous.sql,
+            "issues": list(issues),
+            "repaired_sql": None,
+        }
+
+        retry_details.append(retry_record)
+
+        with measure("SQL Regeneration"):
+            result = original_regenerate(
+                self,
+                previous,
+                issues=issues,
+                validation_type=validation_type,
+            )
+
+        retry_record["repaired_sql"] = result.sql
+
+        generation_details.append({
+            "type": f"{validation_type}_repair",
+            "sql": result.sql,
+        })
+
+        return result
+
     with (
         patch.object(
             generator_module,
@@ -120,6 +180,16 @@ def main():
             OllamaClient,
             "chat",
             timed_chat,
+        ),
+        patch.object(
+            SQLGenerator,
+            "generate",
+            traced_generate,
+        ),
+        patch.object(
+            SQLGenerator,
+            "regenerate",
+            traced_regenerate,
         ),
         patch.object(
             service_module,
@@ -171,7 +241,7 @@ def main():
             result = service.run(QUESTION)
 
             print("[SUCCESS] SQL pipeline completed")
-            print("\nGenerated SQL:")
+            print("\nFinal SQL:")
             print(result.sql)
             print(
                 f"\nRows returned: {result.row_count}"
@@ -203,6 +273,41 @@ def main():
             f"{name:32s}"
             f"{sum(values):9.3f} s"
             f"  calls={len(values)}"
+        )
+
+    print("\n" + "=" * 60)
+    print("SQL GENERATION AND RETRY DIAGNOSTICS")
+    print("=" * 60)
+
+    for index, item in enumerate(
+        generation_details, start=1
+    ):
+        print(f"\nGeneration #{index}")
+        print("Type:", item["type"])
+        print("SQL:")
+        print(item["sql"])
+
+    if not retry_details:
+        print("\nNo SQL regeneration was required.")
+
+    for index, retry in enumerate(
+        retry_details, start=1
+    ):
+        print(f"\nRetry #{index}")
+        print("Validation type:", retry["type"])
+
+        print("\nValidation issues:")
+        for issue in retry["issues"]:
+            print(f"- {issue}")
+
+        print("\nOriginal SQL:")
+        print(retry["original_sql"])
+
+        print("\nRepaired SQL:")
+        print(
+            retry["repaired_sql"]
+            if retry["repaired_sql"] is not None
+            else "Repair did not complete."
         )
 
     print("\n" + "=" * 60)

@@ -1,6 +1,7 @@
 
 import os
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -35,6 +36,12 @@ MODEL_NAME = (
 )
 
 
+@lru_cache(maxsize=1)
+def get_embedding_model() -> SentenceTransformer:
+    """Load the embedding model once per Python process."""
+    return SentenceTransformer(MODEL_NAME)
+
+
 def retrieve_raw_schema(question: str, top_k: int = 5):
     """
     PostgreSQL pgvector üzerinden ham semantic sonuçları getirir.
@@ -52,7 +59,7 @@ def retrieve_raw_schema(question: str, top_k: int = 5):
     if not database_url:
         raise ValueError("DATABASE_URL bulunamadı.")
 
-    model = SentenceTransformer(MODEL_NAME)
+    model = get_embedding_model()
 
     query_embedding = model.encode(
         question,
