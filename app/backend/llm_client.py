@@ -18,8 +18,16 @@ class LLMClientError(Exception):
 class LLMResponse:
     content: str
     model: str
+
+    # Existing performance metrics
     total_duration_ns: int | None = None
     eval_count: int | None = None
+
+    # Detailed Ollama performance metrics
+    load_duration_ns: int | None = None
+    prompt_eval_duration_ns: int | None = None
+    prompt_eval_count: int | None = None
+    eval_duration_ns: int | None = None
 
 
 class OllamaClient:
@@ -42,7 +50,9 @@ class OllamaClient:
         )
 
         if timeout <= 0:
-            raise ValueError("timeout must be greater than zero")
+            raise ValueError(
+                "timeout must be greater than zero"
+            )
 
         self.timeout = timeout
 
@@ -52,15 +62,21 @@ class OllamaClient:
         temperature: float = 0.0,
     ) -> LLMResponse:
         if not messages:
-            raise ValueError("messages must not be empty")
+            raise ValueError(
+                "messages must not be empty"
+            )
 
         for message in messages:
             if (
-                message.get("role") not in
-                {"system", "user", "assistant"}
-                or not isinstance(message.get("content"), str)
+                message.get("role")
+                not in {"system", "user", "assistant"}
+                or not isinstance(
+                    message.get("content"), str
+                )
             ):
-                raise ValueError("Invalid chat message")
+                raise ValueError(
+                    "Invalid chat message"
+                )
 
         payload: dict[str, Any] = {
             "model": self.model,
@@ -71,12 +87,16 @@ class OllamaClient:
             },
         }
 
-        encoded_payload = json.dumps(payload).encode("utf-8")
+        encoded_payload = json.dumps(
+            payload
+        ).encode("utf-8")
 
         http_request = request.Request(
             url=f"{self.base_url}/api/chat",
             data=encoded_payload,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json"
+            },
             method="POST",
         )
 
@@ -94,7 +114,8 @@ class OllamaClient:
 
         except error.URLError as exc:
             raise LLMClientError(
-                f"Cannot connect to Ollama: {exc.reason}"
+                "Cannot connect to Ollama: "
+                f"{exc.reason}"
             ) from exc
 
         except TimeoutError as exc:
@@ -112,16 +133,40 @@ class OllamaClient:
             response_model = result["model"]
 
             if not isinstance(content, str):
-                raise TypeError("Response content must be text")
+                raise TypeError(
+                    "Response content must be text"
+                )
 
             if not isinstance(response_model, str):
-                raise TypeError("Response model must be text")
+                raise TypeError(
+                    "Response model must be text"
+                )
 
             return LLMResponse(
                 content=content,
                 model=response_model,
-                total_duration_ns=result.get("total_duration"),
-                eval_count=result.get("eval_count"),
+
+                # Existing metrics
+                total_duration_ns=result.get(
+                    "total_duration"
+                ),
+                eval_count=result.get(
+                    "eval_count"
+                ),
+
+                # Detailed performance metrics
+                load_duration_ns=result.get(
+                    "load_duration"
+                ),
+                prompt_eval_duration_ns=result.get(
+                    "prompt_eval_duration"
+                ),
+                prompt_eval_count=result.get(
+                    "prompt_eval_count"
+                ),
+                eval_duration_ns=result.get(
+                    "eval_duration"
+                ),
             )
 
         except (KeyError, TypeError) as exc:
