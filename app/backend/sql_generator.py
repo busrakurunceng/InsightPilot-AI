@@ -138,16 +138,22 @@ class SQLGenerator:
             ],
         )
 
+
     def regenerate(
         self,
         previous: SQLGenerationResult,
         issues: list[str],
+        *,
+        validation_type: str = "semantic",
     ) -> SQLGenerationResult:
         """
-        Regenerate SQL using the original prompt context
-        and semantic validation feedback.
+        Regenerate SQL using the original Schema RAG context.
 
-        No new Schema RAG retrieval is performed.
+        Supported validation types:
+        - semantic: repair grouping/dimension errors
+        - schema: repair invalid database references
+
+        No additional Schema RAG retrieval is performed.
         """
         if not isinstance(previous, SQLGenerationResult):
             raise TypeError(
@@ -171,6 +177,11 @@ class SQLGenerator:
                 "Validation issues must be a non-empty list."
             )
 
+        if validation_type not in {"semantic", "schema"}:
+            raise ValueError(
+                "Unsupported validation type."
+            )
+
         feedback = "\n".join(
             f"- {issue.strip()}"
             for issue in issues
@@ -186,9 +197,8 @@ class SQLGenerator:
             "content": previous.sql,
         })
 
-        messages.append({
-            "role": "user",
-            "content": (
+        if validation_type == "semantic":
+            repair_instructions = (
                 "The previous SQL failed semantic validation.\n"
                 "Correct the SQL using ONLY the original "
                 "schema and business context.\n\n"
@@ -199,8 +209,32 @@ class SQLGenerator:
                 "in SELECT and GROUP BY.\n"
                 "- Use documented relationships for JOINs.\n"
                 "- Do not introduce unrequested filters.\n"
-                "- Return exactly one read-only SELECT query.\n"
-                "- Return SQL only, without explanations "
+            )
+        else:
+            repair_instructions = (
+                "The previous SQL failed PostgreSQL schema "
+                "validation.\n"
+                "Correct invalid table names, column names, "
+                "aliases, or relationships using ONLY the "
+                "original schema and business context.\n\n"
+                f"Validation issues:\n{feedback}\n\n"
+                "Requirements:\n"
+                "- Use only documented tables and columns.\n"
+                "- Do not invent schema objects.\n"
+                "- Preserve the user's original measure "
+                "and grouping requirements.\n"
+                "- Use documented relationships for JOINs.\n"
+                "- Do not introduce unrequested filters.\n"
+                "- If the original context is insufficient, "
+                "return INSUFFICIENT_CONTEXT.\n"
+            )
+
+        messages.append({
+            "role": "user",
+            "content": (
+                repair_instructions
+                + "- Return exactly one read-only SELECT query.\n"
+                + "- Return SQL only, without explanations "
                 "or Markdown."
             ),
         })
