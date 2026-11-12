@@ -1,24 +1,22 @@
-# Data processing
+﻿# Core data processing
 pandas
 numpy
 
-# PostgreSQL and database integration
+# SQL and database integration
 sqlalchemy
 psycopg[binary]
 python-dotenv
+sqlglot==30.27.0
 
-# Dashboard and visualization
+# Application UI and visualization
 streamlit
 plotly
 
-# Testing
-pytest>=9,<10
+# NLP and embeddings
+sentence-transformers>=5,<6
 
-
-
+# Configuration
 PyYAML>=6,<7
 
-sqlglot==30.27.0
-
-
-sentence-transformers>=5,<6
+# Testing
+pytest>=9,<10
