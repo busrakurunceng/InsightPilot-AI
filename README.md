@@ -4,7 +4,10 @@
 
 InsightPilot AI is an incremental AI engineering project for asking business questions about e-commerce data in natural language. It combines a validated PostgreSQL data foundation, a Streamlit analytics dashboard, semantic schema retrieval, and a locally hosted LLM that generates SQL for restricted, read-only execution.
 
-**Current status (8 November 2026):** **Modules 1, 2, and 3 are complete for the current project scope.** The latest live 12-question Text-to-SQL benchmark achieved **12/12 correct (100.00% execution accuracy)**, and the regression suite reported **327 passed, 2 skipped**. These results describe a small, observed evaluation—not production reliability or accuracy on unseen questions. **Conversational querying through the dashboard and autonomous agent workflows are not yet implemented.** Module 4 (Business Analytics) is next.
+**Recorded baseline (8 November 2026):** **Modules 1, 2, and 3 are complete for the current project scope.** The latest live 12-question Text-to-SQL benchmark achieved **12/12 correct (100.00% execution accuracy)**, and the regression suite reported **327 passed, 2 skipped**. These results describe a small, observed evaluation—not production reliability or accuracy on unseen questions. **Conversational querying through the dashboard and autonomous agent workflows are not yet implemented.** Module 4 (Business Analytics) is next.
+
+
+> **Update — 12 November 2026:** The expanded advanced SQL reference evaluation achieved **5/5 final result matches** (3/5 on first attempt; two successful bounded repairs). The latest regression run was **532 passed, 2 skipped**. These results are from a *separate five-case advanced evaluation*, not a rerun or replacement of the earlier 12-case benchmark. Semantic business-rule validation now checks distinct customer identity and unwanted delivered-only filtering in relevant revenue questions. Commits: `777807f` and `ca09421`. See [Semantic SQL validation](docs/semantic_layer.md) and [Advanced evaluation](docs/advanced_sql_evaluation.md).
 
 ## What Works Today
 
@@ -14,7 +17,7 @@ InsightPilot AI is an incremental AI engineering project for asking business que
 - **Safe execution controls:** SQLGlot-based SQL validation, a dedicated PostgreSQL read-only role, read-only transactions, statement timeouts, and bounded result retrieval.
 - **Evaluation:** A reproducible 12-question benchmark, reference SQL execution, result comparison, error categorization, and automated tests.
 - **Semantic validation and bounded retry:** Turkish question-to-dimension mapping, SQLGlot-based grouping checks, and one feedback-guided SQL regeneration attempt are integrated into `TextToSQLService`. Regenerated SQL is rechecked for safety and semantic requirements before execution.
-- **Verified milestone:** 12/12 correct in the latest live benchmark; 327 passed and 2 skipped in the latest regression suite.
+- **Historical milestone (8 Nov):** 12/12 on the 12-case benchmark; 327 passed, 2 skipped. **Latest (12 Nov):** 5/5 on a separate advanced benchmark; 532 passed, 2 skipped.
 
 ## Technology Stack
 
@@ -311,6 +314,11 @@ The live evaluation requires the local Ollama model, embeddings, database, and r
 
 ## Documentation
 
+- [`docs/architecture.md`](docs/architecture.md) — implemented architecture and data flow.
+- [`docs/semantic_layer.md`](docs/semantic_layer.md) — semantic rules and bounded repair.
+- [`docs/advanced_sql_evaluation.md`](docs/advanced_sql_evaluation.md) — five-case advanced evaluation and limitations.
+
+
 - [`docs/development_log.md`](docs/development_log.md) — implementation history, technical decisions, and test milestones.
 - [`docs/text_to_sql_evaluation.md`](docs/text_to_sql_evaluation.md) — benchmark results, failure analysis, and limitations.
 - [`docs/schema_rag_validation_results.md`](docs/schema_rag_validation_results.md) — retrieval evaluation.
@@ -324,6 +332,6 @@ A project license has not yet been selected.
 
 ---
 
-**Project status (8 November 2026):** Modules 1–3 complete for the current scope; Module 4 is next. Latest live Text-to-SQL evaluation: **12/12 correct (100.00%)**. Latest regression suite: **327 passed, 2 skipped**. Conversational dashboard integration and autonomous agent workflows remain planned.
+**Historical project status (8 November 2026):** Modules 1–3 complete for the current scope; Module 4 is next. Latest live Text-to-SQL evaluation: **12/12 correct (100.00%)**. Latest regression suite: **327 passed, 2 skipped**. Conversational dashboard integration and autonomous agent workflows remain planned.
 
 **Author:** Büşra Kurun

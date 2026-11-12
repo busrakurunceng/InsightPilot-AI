@@ -6,7 +6,7 @@
 **Dataset:** Brazilian E-Commerce Public Dataset by Olist  
 **Database:** PostgreSQL 18  
 **Development Environment:** Python 3.11, VS Code, Windows, pgAdmin  
-**Current Phase:** Module 3 — Text-to-SQL Evaluation and Semantic Validation (Step 3.7.3.6.1 completed)
+**Historical phase at initial log authoring:** Module 3 — Text-to-SQL Evaluation and Semantic Validation. **Latest documented checkpoint (12 Nov 2026):** advanced semantic business rules and evaluation completed; robustness expansion pending.
 
 ### Project Objective
 
@@ -953,3 +953,41 @@ Implemented components:
 - Record technical problems and their resolutions.
 - Commit tested milestones with descriptive messages.
 - Update this development log after each significant milestone.
+
+
+---
+
+## 12 November 2026 — Advanced SQL Semantic Intelligence Checkpoint
+
+**Status:** Implemented, evaluated, committed and pushed. This entry supplements earlier milestones; it does not replace historical measurements.
+
+### Changes
+
+- Added `app/backend/business_rule_validator.py` and `tests/test_business_rule_validator.py`.
+- Updated `app/backend/sql_prompt_builder.py`, `app/backend/text_to_sql_service.py`, and `semantic/business_semantics.yaml`.
+- Applied business-rule checks for distinct Olist customers (`customers.customer_unique_id`) and for unrequested `delivered` status restrictions in product-category revenue questions.
+- Kept the existing bounded validation-and-regeneration approach: invalid SQL receives at most one corrective regeneration attempt before revalidation.
+- Added advanced SQL reference evaluation (`scripts/evaluate_advanced_sql.py`), comparison tests, and date-function tests; updated `app/backend/sql_validator.py`.
+
+### Observed local validation
+
+- `python -m pytest -q`: **532 passed, 2 skipped** (12 November 2026).
+- `python -m scripts.evaluate_advanced_sql`: **5/5 final reference-result matches**; **3/5 first-attempt matches**; **2 retries**, both successful.
+- Orders per state: corrected missing grouping/relationship in one retry.
+- Monthly orders in 2018: matched on first attempt.
+- Distinct customers per state: correctly used `COUNT(DISTINCT customers.customer_unique_id)` on first attempt.
+- Delivered-order payment sum: matched on first attempt.
+- Top categories by item revenue: removed an unrequested delivered-only filter in one retry.
+
+### Git checkpoints
+
+- `777807f` — `feat: add semantic business rule validation and SQL repair`
+- `ca09421` — `test: add advanced SQL evaluation and date function support`
+- After the second push, `git status` reported `nothing to commit, working tree clean`.
+
+### Boundaries and next work
+
+- Five questions are not evidence of generalizable 100% SQL accuracy.
+- The earlier 12-question benchmark is a distinct evaluation and was not rerun in this checkpoint.
+- The original KPI definition of *delivered product revenue* differs from *all-order item revenue* requested without a delivery restriction; preserve both semantics.
+- Next: unseen paraphrases, negative cases, multi-join fan-out, ambiguous questions, repeated-run variance and expanded benchmark.

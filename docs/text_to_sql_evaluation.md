@@ -1,11 +1,11 @@
-# InsightPilot AI — Text-to-SQL Evaluation and Error Analysis
+# InsightPilot AI â€” Text-to-SQL Evaluation and Error Analysis
 
-**Project:** InsightPilot AI  
-**Module:** 3 — Text-to-SQL Engine  
-**Benchmark:** `evaluations/text_to_sql_benchmark.json`  
-**Database:** PostgreSQL / Olist  
-**Last recorded full benchmark:** 11/12 correct (91.67%)  
-**Latest full unit-test suite:** 266 passed, 2 skipped
+**Project:** InsightPilot AI
+**Module:** 3 â€” Text-to-SQL Engine
+**Benchmark:** `evaluations/text_to_sql_benchmark.json`
+**Database:** PostgreSQL / Olist
+**Historical benchmark at the time of this report:** 11/12 correct (91.67%); later README/development log records a 12/12 run on the same benchmark. See dated addendum below.
+**Historical unit-test suite at the time of this report:** 266 passed, 2 skipped; see dated addendum below.
 
 ## 1. Evaluation Method
 
@@ -32,7 +32,7 @@ An accurate result on this benchmark does not establish general correctness, rob
 - SQL_007 (customers by state): introduced an unwanted delivered-order filter and JOIN.
 - SQL_008 (total payment value): added an unrequested delivered-order restriction.
 - SQL_009 (average payment): added an unrequested delivered-order restriction.
-- SQL_010 (orders from São Paulo state): initially recorded as an execution error; the original failing SQL was not preserved in the report. A later standalone generation produced a different incorrect SQL and should not be treated as the original cause.
+- SQL_010 (orders from SÃ£o Paulo state): initially recorded as an execution error; the original failing SQL was not preserved in the report. A later standalone generation produced a different incorrect SQL and should not be treated as the original cause.
 - SQL_012 (orders by customer state): omitted customer-state grouping and JOIN.
 
 ### Following context precision and business semantics improvements
@@ -43,7 +43,7 @@ An accurate result on this benchmark does not establish general correctness, rob
 
 ## 4. SQL_012 Detailed Investigation
 
-**Question:** Her eyaletteki müşterilerin verdiği sipariş sayısını göster.
+**Question:** Her eyaletteki mÃ¼ÅŸterilerin verdiÄŸi sipariÅŸ sayÄ±sÄ±nÄ± gÃ¶ster.
 
 **Expected reference query shape:**
 
@@ -108,3 +108,12 @@ The evaluation runs the model and database queries and may overwrite `artifacts/
 3. Optional bounded feedback/retry after validation, followed by normal SQL security validation.
 4. Full benchmark comparison with the preserved 91.67% report; record both improvements and regressions.
 5. Expand benchmark coverage beyond 12 questions.
+
+
+---
+
+## Addendum â€” 12 November 2026
+
+This report is retained as a historical investigation of the original 12-case benchmark. Subsequent development integrated dimension mapping, bounded retry and business-rule validation. The README and development log recorded a later **12/12** result on that original benchmark (8 November 2026); the original 11/12 result above remains valid as an earlier checkpoint.
+
+The **separate five-case advanced evaluation** subsequently reported **3/5 first-attempt matches, 5/5 final matches, and two successful retries**. Latest pytest: **532 passed, 2 skipped**. For cases, commands, limitations and Git commits see [`advanced_sql_evaluation.md`](advanced_sql_evaluation.md). No claim is made that the original 12-case benchmark was rerun after the 12 November changes.
