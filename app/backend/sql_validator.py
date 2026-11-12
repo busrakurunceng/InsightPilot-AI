@@ -37,6 +37,9 @@ ALLOWED_FUNCTIONS = (
     exp.Round,
     exp.Abs,
     exp.Coalesce,
+    exp.Extract,
+    exp.DateTrunc,
+    exp.TimestampTrunc,
 )
 
 # SQLGlot can represent logical operators within
