@@ -1,12 +1,12 @@
-
-"""
+﻿"""
 Evaluate first-attempt SQL generation quality.
 
 Run:
     python -m scripts.evaluate_sql_generation
 
-Uses real Schema RAG, Ollama, and PostgreSQL.
-Does not modify application source files.
+This script checks the output of the real schema-RAG + SQL-generation pipeline.
+It uses the application’s actual Ollama and PostgreSQL integrations, but it does
+not modify source files in the app.
 """
 
 import time
@@ -21,6 +21,12 @@ from app.backend.text_to_sql_service import (
     OLIST_ALLOWED_TABLES,
     TextToSQLService,
 )
+
+
+AGGREGATE_TYPES = {
+    "count": exp.Count,
+    "sum": exp.Sum,
+}
 
 
 @dataclass(frozen=True)
@@ -52,9 +58,7 @@ TEST_CASES = [
     ),
     TestCase(
         name="Payment total by type",
-        question=(
-            "Her ödeme türü için toplam ödeme tutarı nedir?"
-        ),
+        question="Her ödeme türü için toplam ödeme tutarı nedir?",
         dimension="payment_type",
         measure="sum",
     ),
@@ -67,14 +71,17 @@ TEST_CASES = [
 ]
 
 
-def inspect_sql(sql, test_case):
+def inspect_sql(sql: str | None, test_case: TestCase) -> list[str]:
     """
-    Basic structural checks.
+    Run basic structural validation checks on generated SQL.
 
-    These checks do not prove full business correctness.
-    The normal pipeline performs its own validations.
+    These checks are intentionally lightweight and do not prove full business
+    correctness. The main validation pipeline performs deeper checks.
     """
-    issues = []
+    if not sql:
+        return ["No SQL was produced."]
+
+    issues: list[str] = []
 
     try:
         tree = parse_one(sql, read="postgres")
@@ -92,8 +99,7 @@ def inspect_sql(sql, test_case):
     }
 
     group = tree.args.get("group")
-
-    group_columns = set()
+    group_columns: set[str] = set()
 
     if group is not None:
         for expression in group.expressions:
@@ -102,46 +108,31 @@ def inspect_sql(sql, test_case):
 
     if test_case.dimension is None:
         if group is not None:
-            issues.append(
-                "Unexpected GROUP BY for an overall total."
-            )
+            issues.append("Unexpected GROUP BY for an overall total.")
     else:
-        expected = test_case.dimension.lower()
+        expected_dimension = test_case.dimension.lower()
 
-        if expected not in select_columns:
-            issues.append(
-                f"Missing dimension in SELECT: {expected}"
-            )
+        if expected_dimension not in select_columns:
+            issues.append(f"Missing dimension in SELECT: {expected_dimension}")
 
         if group is None:
             issues.append("Missing GROUP BY.")
-        elif expected not in group_columns:
-            issues.append(
-                f"Missing dimension in GROUP BY: {expected}"
-            )
+        elif expected_dimension not in group_columns:
+            issues.append(f"Missing dimension in GROUP BY: {expected_dimension}")
 
-    aggregate_type = {
-        "count": exp.Count,
-        "sum": exp.Sum,
-    }[test_case.measure]
+    aggregate_type = AGGREGATE_TYPES[test_case.measure]
 
-    if not any(
-        isinstance(node, aggregate_type)
-        for node in tree.walk()
-    ):
-        issues.append(
-            f"Missing expected aggregate: "
-            f"{test_case.measure.upper()}"
-        )
+    if not any(isinstance(node, aggregate_type) for node in tree.walk()):
+        issues.append(f"Missing expected aggregate: {test_case.measure.upper()}")
 
     return issues
 
 
-def evaluate_case(test_case, index, total):
-    initial_sql = None
-    retry_sql = None
-    retry_type = None
-    retry_issues = []
+def evaluate_case(test_case: TestCase, index: int, total: int) -> dict[str, object]:
+    initial_sql: str | None = None
+    retry_sql: str | None = None
+    retry_type: str | None = None
+    retry_issues: list[str] = []
     retry_count = 0
 
     original_generate = SQLGenerator.generate
@@ -150,20 +141,11 @@ def evaluate_case(test_case, index, total):
     def traced_generate(self, *args, **kwargs):
         nonlocal initial_sql
 
-        result = original_generate(
-            self, *args, **kwargs
-        )
-
+        result = original_generate(self, *args, **kwargs)
         initial_sql = result.sql
         return result
 
-    def traced_regenerate(
-        self,
-        previous,
-        issues,
-        *,
-        validation_type="semantic",
-    ):
+    def traced_regenerate(self, previous, issues, *, validation_type="semantic"):
         nonlocal retry_sql
         nonlocal retry_type
         nonlocal retry_count
@@ -178,7 +160,6 @@ def evaluate_case(test_case, index, total):
             issues=issues,
             validation_type=validation_type,
         )
-
         retry_sql = result.sql
         return result
 
@@ -192,65 +173,31 @@ def evaluate_case(test_case, index, total):
     error = None
 
     with (
-        patch.object(
-            SQLGenerator,
-            "generate",
-            traced_generate,
-        ),
-        patch.object(
-            SQLGenerator,
-            "regenerate",
-            traced_regenerate,
-        ),
+        patch.object(SQLGenerator, "generate", traced_generate),
+        patch.object(SQLGenerator, "regenerate", traced_regenerate),
     ):
         try:
             service = TextToSQLService(
                 executor=SQLExecutor(
-                    allowed_tables=set(
-                        OLIST_ALLOWED_TABLES
-                    ),
+                    allowed_tables=set(OLIST_ALLOWED_TABLES),
                 ),
             )
-
-            result = service.run(
-                test_case.question
-            )
-
+            result = service.run(test_case.question)
         except Exception as exc:
             error = exc
 
     elapsed = time.perf_counter() - start
 
-    first_issues = (
-        inspect_sql(initial_sql, test_case)
-        if initial_sql
-        else ["No initial SQL was produced."]
-    )
+    first_issues = inspect_sql(initial_sql, test_case) if initial_sql else ["No initial SQL was produced."]
+    first_pass = initial_sql is not None and not first_issues
 
-    first_pass = (
-        initial_sql is not None
-        and not first_issues
-    )
-
-    final_issues = (
-        inspect_sql(result.sql, test_case)
-        if result is not None
-        else ["Pipeline did not complete."]
-    )
-
-    final_pass = (
-        result is not None
-        and not final_issues
-    )
+    final_issues = inspect_sql(result.sql, test_case) if result is not None else ["Pipeline did not complete."]
+    final_pass = result is not None and not final_issues
 
     print("\nInitial SQL:")
     print(initial_sql or "(not generated)")
 
-    print(
-        "\nFirst-attempt structural check:",
-        "PASS" if first_pass else "FAIL",
-    )
-
+    print("\nFirst-attempt structural check:", "PASS" if first_pass else "FAIL")
     for issue in first_issues:
         print(" -", issue)
 
@@ -259,17 +206,13 @@ def evaluate_case(test_case, index, total):
     if retry_count:
         print("Retry type:", retry_type)
         print("Retry feedback:")
-
         for issue in retry_issues:
             print(" -", issue)
 
         print("\nRepaired SQL:")
         print(retry_sql or "(not generated)")
 
-    print(
-        "\nPipeline result:",
-        "SUCCESS" if result else "FAILED",
-    )
+    print("\nPipeline result:", "SUCCESS" if result else "FAILED")
 
     if result:
         print("Final SQL:")
@@ -281,18 +224,10 @@ def evaluate_case(test_case, index, total):
             print("Final check issue:", issue)
 
     if error:
-        print(
-            "Error:",
-            type(error).__name__,
-            str(error),
-        )
+        print("Error:", type(error).__name__, str(error))
 
         if error.__cause__ is not None:
-            print(
-                "Cause:",
-                type(error.__cause__).__name__,
-                str(error.__cause__),
-            )
+            print("Cause:", type(error.__cause__).__name__, str(error.__cause__))
 
     print(f"Elapsed: {elapsed:.3f} s")
 
@@ -305,61 +240,28 @@ def evaluate_case(test_case, index, total):
     }
 
 
-def main():
+def main() -> None:
     print("\nInsightPilot-AI SQL Generation Evaluation")
     print("Tests:", len(TEST_CASES))
 
-    results = []
+    results: list[dict[str, object]] = []
 
-    for index, test_case in enumerate(
-        TEST_CASES, start=1
-    ):
-        results.append(
-            evaluate_case(
-                test_case,
-                index,
-                len(TEST_CASES),
-            )
-        )
+    for index, test_case in enumerate(TEST_CASES, start=1):
+        results.append(evaluate_case(test_case, index, len(TEST_CASES)))
 
     total = len(results)
-
-    first_passed = sum(
-        item["first_pass"]
-        for item in results
-    )
-
-    final_passed = sum(
-        item["final_pass"]
-        for item in results
-    )
-
-    retries = sum(
-        item["retry_count"]
-        for item in results
-    )
-
-    total_time = sum(
-        item["elapsed"]
-        for item in results
-    )
+    first_passed = sum(item["first_pass"] for item in results)
+    final_passed = sum(item["final_pass"] for item in results)
+    retries = sum(item["retry_count"] for item in results)
+    total_time = sum(item["elapsed"] for item in results)
 
     print("\n" + "=" * 65)
     print("EVALUATION SUMMARY")
     print("=" * 65)
 
     for item in results:
-        first_status = (
-            "PASS"
-            if item["first_pass"]
-            else "FAIL"
-        )
-
-        final_status = (
-            "PASS"
-            if item["final_pass"]
-            else "FAIL"
-        )
+        first_status = "PASS" if item["first_pass"] else "FAIL"
+        final_status = "PASS" if item["final_pass"] else "FAIL"
 
         print(
             f"{item['name']}: "
@@ -374,13 +276,11 @@ def main():
         f"{first_passed}/{total}",
         f"({100 * first_passed / total:.1f}%)",
     )
-
     print(
         "Final pipeline + structural pass rate:",
         f"{final_passed}/{total}",
         f"({100 * final_passed / total:.1f}%)",
     )
-
     print("Total retries:", retries)
     print(f"Total elapsed: {total_time:.3f} s")
 
