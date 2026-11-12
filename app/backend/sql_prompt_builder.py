@@ -2,6 +2,7 @@
 import json
 
 from app.backend.schema_dependencies import load_semantics
+from app.backend.schema_relevance import normalize_text
 
 
 SYSTEM_PROMPT = """
@@ -73,6 +74,15 @@ This example illustrates grouping behavior only.
 It does not authorize using customers, customer_state,
 or any other schema object unless supplied in context.
 
+BUSINESS METRIC IDENTITY:
+- In Olist, customer_id identifies a customer record for an order;
+  customer_unique_id identifies a distinct real customer.
+- For questions about distinct/unique customers, count
+  DISTINCT customers.customer_unique_id, never orders.customer_id.
+- For product/category revenue excluding shipping, use SUM(order_items.price).
+- Do not add orders.order_status = 'delivered' unless the user explicitly
+  requests delivered orders or selects a delivered-only metric.
+
 FINAL SQL SELF-CHECK:
 Before returning SQL, internally verify:
 - Does the SQL answer the complete business question?
@@ -106,7 +116,7 @@ SAFETY:
 """.strip()
 
 
-def build_business_context(context, semantics):
+def build_business_context(context, semantics, question=""):
     """
     Include only business definitions relevant to tables
     already present in the selected schema context.
@@ -147,9 +157,23 @@ def build_business_context(context, semantics):
         ):
             relationships.append(relationship)
 
+    # Expose only metrics whose required base table is grounded in retrieval.
+    # A metric never authorizes tables or columns absent from schema chunks.
+    question_tokens = set(normalize_text(question).split())
+    delivered_requested = bool(question_tokens & {
+        "teslim", "edilmis", "edilen", "delivered"
+    })
+    relevant_metrics = {
+        name: definition
+        for name, definition in semantics.get("metrics", {}).items()
+        if definition.get("base_table") in table_names
+        and (not name.startswith("delivered_") or delivered_requested)
+    }
+
     return {
         "tables": table_definitions,
         "logical_relationships": relationships,
+        "metrics": relevant_metrics,
     }
 
 
@@ -191,6 +215,7 @@ def build_sql_messages(
     business_context = build_business_context(
         context,
         semantics,
+        question,
     )
 
     user_content = (

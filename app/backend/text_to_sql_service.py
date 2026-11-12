@@ -8,6 +8,7 @@ from app.backend.question_dimension_mapper import (
 from app.backend.semantic_sql_validator import (
     validate_grouping_requirement,
 )
+from app.backend.business_rule_validator import validate_business_rules
 from app.backend.sql_executor import SQLExecutor
 from app.backend.sql_generator import SQLGenerator
 from app.backend.sql_validator import validate_sql
@@ -157,9 +158,6 @@ class TextToSQLService:
         """
         Check required grouping dimensions.
         """
-        if required_dimension is None:
-            return []
-
         try:
             result = validate_grouping_requirement(
                 sql,
@@ -171,6 +169,14 @@ class TextToSQLService:
             ) from exc
 
         return result.issues
+
+    def _validate_business_rules(self, question: str, sql: str) -> list[str]:
+        try:
+            return validate_business_rules(question, sql)
+        except Exception as exc:
+            raise SQLSemanticValidationPipelineError(
+                "Business rule validation failed."
+            ) from exc
 
     def _validate_database_schema(
         self,
@@ -331,7 +337,7 @@ class TextToSQLService:
         issues = self._validate_semantics(
             validation.sql,
             required_dimension,
-        )
+        ) + self._validate_business_rules(question, validation.sql)
 
         # -----------------------------------------
         # 5. Optional semantic repair
@@ -366,14 +372,13 @@ class TextToSQLService:
                 self._validate_semantics(
                     validation.sql,
                     required_dimension,
-                )
+                ) + self._validate_business_rules(question, validation.sql)
             )
 
             if retry_issues:
                 raise SQLSemanticValidationPipelineError(
                     "SQL regeneration did not satisfy "
-                    "the required dimension "
-                    f"({required_dimension}): "
+                    "semantic business requirements: "
                     + "; ".join(retry_issues)
                 )
 
@@ -425,14 +430,13 @@ class TextToSQLService:
                 self._validate_semantics(
                     validation.sql,
                     required_dimension,
-                )
+                ) + self._validate_business_rules(question, validation.sql)
             )
 
             if retry_issues:
                 raise SQLSemanticValidationPipelineError(
                     "Schema-repaired SQL did not "
-                    "satisfy the required dimension "
-                    f"({required_dimension}): "
+                    "satisfy semantic business requirements: "
                     + "; ".join(retry_issues)
                 )
 

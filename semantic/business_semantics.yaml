@@ -5,7 +5,9 @@ language: tr
 tables:
   customers:
     description: Müşteri kayıtları ve müşterinin coğrafi bilgileri.
-    grain: Her satır bir müşteri kaydıdır (customer_id).
+    grain: Her satır bir siparişe bağlanabilen müşteri kaydıdır (customer_id). Aynı gerçek müşteri birden fazla customer_id ile temsil edilebilir.
+    unique_customer_key: customer_unique_id
+    unique_customer_guidance: Farklı/tekil gerçek müşteri sayısı COUNT(DISTINCT customers.customer_unique_id) ile hesaplanır; customer_id ile değil.
 
   orders:
     description: Siparişlerin durumları ve sipariş, teslimat tarihleri.
@@ -67,6 +69,13 @@ metrics:
     date_column: orders.order_purchase_timestamp
     status_filter: null
 
+  product_item_revenue:
+    description: Tüm sipariş kalemlerindeki ürün fiyatlarının toplamı; kargo ücreti dahil değildir. Sipariş durumu filtresi yalnızca kullanıcı açıkça isterse eklenir.
+    expression: SUM(order_items.price)
+    base_table: order_items
+    status_filter: null
+    currency: BRL
+
   delivered_product_revenue:
     description: Teslim edilmiş siparişlerdeki ürün kalemi fiyatlarının toplamı; kargo ücreti ve ödeme toplamları dahil değildir.
     expression: SUM(order_items.price)
@@ -110,18 +119,25 @@ rules:
 
 # Conservative natural-language grouping dimensions. These definitions do not
 # automatically alter schema chunks or SQL generation prompts.
+
 dimensions:
   customers.customer_state:
     grouping_phrases:
       - eyaletlere gore
       - eyaletteki
       - eyalet bazinda
+      - her eyalette
+      - eyaletlere dagilimi
     owner_terms:
       - musteri
       - musteriler
       - musterilerin
       - musterileri
       - musterilerinin
+      - siparis
+      - siparisler
+      - siparislerin
+      - siparisleri
   customers.customer_city:
     grouping_phrases:
       - sehirlere gore
